@@ -1,3 +1,5 @@
+import { expect } from "@playwright/test";
+
 /**
  * Page Object Model representing the Account Activity page.
  * This class encapsulates locators and interactions to ensure tests remain
@@ -44,8 +46,18 @@ export class AccountActivityPage {
      * @param {import('@playwright/test').Locator} locator
      * @returns {Promise<string>}
      */
+    // async _getSafeText(locator) {
+    //     await locator.waitFor({ state: 'visible' });
+    //     const text = await locator.textContent();
+    //     return text ? text.trim() : '';
+    // }
     async _getSafeText(locator) {
         await locator.waitFor({ state: 'visible' });
+
+        // Wait for the text to contain a "$" or a word (Account Type)
+        // This avoids grabbing the empty string during the data-fetch phase.
+        await expect(locator).toHaveText(/[\w\$]/);
+
         const text = await locator.textContent();
         return text ? text.trim() : '';
     }

@@ -34,7 +34,7 @@ export class BillPayPage {
     }
 
     get payeePhoneNumberInput() {
-        return this.page.locator('[name="payee.contactInformation.phoneNumber"]');
+        return this.page.locator('input[name="payee.phoneNumber"]');
     }
 
     get payeeAccountNumberInput() {

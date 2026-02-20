@@ -14,7 +14,7 @@ const PARABANK_ENDPOINTS = {
     userDetails: (user, pass) => `/parabank/services/bank/login/${user}/${pass}`,
 };
 
-test.describe.serial('API - User Banking Journey @journey', () => {
+test.describe.serial('API - User Banking Journey', () => {
     let sharedSessionId;
     
     /** 

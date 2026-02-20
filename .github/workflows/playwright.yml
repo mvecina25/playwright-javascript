@@ -37,7 +37,7 @@ jobs:
       run: npx playwright install --with-deps
 
     - name: Run Playwright tests
-      run: npx playwright test --grep ${{ github.event.inputs.grep_tag || '@journey' }}
+      run: npx playwright test --grep ${{ github.event.inputs.grep_tag || '@journey' }} --project=chromium
       env:
         # Uses input from manual run, or defaults to the Parabank URL
         APP_BASE_URL: ${{ github.event.inputs.environment_url || 'http://parabank.parasoft.com' }}

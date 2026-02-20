@@ -4,6 +4,17 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  # This section enables manual runs
+  workflow_dispatch:
+    inputs:
+      environment_url:
+        description: 'URL to run tests against'
+        required: false
+        default: 'http://parabank.parasoft.com'
+      grep_tag:
+        description: 'Test tag to run (e.g., @journey, @smoke)'
+        required: false
+        default: '@journey'
 
 jobs:
   test:
@@ -19,30 +30,17 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      # Using --no-optional handles the fsevents/macOS error on Linux
-      run: npm install --no-optional
-
-    - name: Get Playwright version
-      id: playwright-version
-      run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('@playwright/test/package.json').version)")" >> $GITHUB_ENV
-
-    - name: Cache Playwright Browsers
-      id: cache-playwright
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+      # Fixed to handle the fsevents/EBADPLATFORM error
+      run: npm install --force --omit=optional
 
     - name: Install Playwright Browsers
-      if: steps.cache-playwright.outputs.cache-hit != 'true'
       run: npx playwright install --with-deps
 
-    - name: Install Playwright System Deps (Linux)
-      if: steps.cache-playwright.outputs.cache-hit == 'true'
-      run: npx playwright install-deps
-
     - name: Run Playwright tests
-      run: npx playwright test --grep @journey
+      run: npx playwright test --grep ${{ github.event.inputs.grep_tag || '@journey' }}
+      env:
+        # Uses input from manual run, or defaults to the Parabank URL
+        APP_BASE_URL: ${{ github.event.inputs.environment_url || 'http://parabank.parasoft.com' }}
 
     - name: Upload Report
       uses: actions/upload-artifact@v4

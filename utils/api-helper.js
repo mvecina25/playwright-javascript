@@ -2,18 +2,23 @@
  * @typedef {Object} ApiRequestParams
  * @property {import('@playwright/test').APIRequestContext} request - The Playwright request object.
  * @property {'POST' | 'GET' | 'PUT' | 'DELETE' | 'PATCH'} method - The HTTP method to use.
- * @property {string} url - The URL to send the request to.
+ * @property {string} url - The URL endpoint.
  * @property {string} [baseUrl] - The base URL to prepend to the request URL.
- * @property {Object | null} [body=null] - The body to send with the request.
- * @property {string | Object} [headers] - If a string, used as an Authorization Token. If an object, merged into headers.
- * @property {boolean} [isFormData=false] - If true, sends the body as x-www-form-urlencoded.
+ * @property {Object | null} [body=null] - The payload to send with the request.
+ * @property {string | Object} [headers] - Authorization Token (string) or a Header Object.
+ * @property {boolean} [isFormData=false] - Whether to send the body as x-www-form-urlencoded.
  */
 
 /**
- * Simplified helper for making API requests and returning the status and parsed body.
+ * Standardized network utility for making API requests.
  * 
- * @param {ApiRequestParams} params - The parameters for the request.
- * @returns {Promise<{ status: number, body: any }>} - An object containing the status code and parsed response body.
+ * WHY: This helper abstracts Playwright's low-level request methods into a 
+ * single, consistent interface. It handles common tasks like header merging, 
+ * URL construction, and intelligent response parsing, ensuring all API tests 
+ * follow the DRY (Don't Repeat Yourself) principle.
+ * 
+ * @param {ApiRequestParams} params
+ * @returns {Promise<{ status: number, body: any, headers: Object }>}
  */
 export async function apiRequest({
     request,
@@ -22,81 +27,135 @@ export async function apiRequest({
     baseUrl,
     body = null,
     headers,
-    isFormData = false, // Add this flag
+    isFormData = false,
 }) {
-    let response;
-    // const options = { headers: {} };
-    const options = {
+    /**
+     * WHY: We set maxRedirects to 0 because many legacy systems (like Parabank) 
+     * use 302 Redirects as a success indicator for form submissions. 
+     * Allowing Playwright to follow redirects would skip these status code assertions.
+     */
+    const httpRequestOptions = {
         headers: {},
-        maxRedirects: 0 // <-- ADD THIS: Prevents Playwright from skipping the 302
+        maxRedirects: 0
     };
 
-    // 1. Handle Headers
-    if (headers && typeof headers === 'string') {
-        // If it's a string, treat as Token (your existing logic)
-        options.headers['Authorization'] = `Token ${headers}`;
-    } else if (headers && typeof headers === 'object') {
-        // If it's an object, merge it
-        options.headers = { ...options.headers, ...headers };
+    // 1. Header Orchestration
+    if (headers) {
+        if (typeof headers === 'string') {
+            /**
+             * WHY: A common pattern in this framework is passing a string token. 
+             * We automatically wrap it in the expected 'Token' format for authorization.
+             */
+            httpRequestOptions.headers['Authorization'] = `Token ${headers}`;
+        } else if (typeof headers === 'object') {
+            httpRequestOptions.headers = { ...httpRequestOptions.headers, ...headers };
+        }
     }
 
-    // 2. Handle Body (Data vs Form)
+    // 2. Body Payload Formatting (JSON vs Form-Data)
     if (body) {
         if (isFormData) {
-            options.form = body; // Playwright uses 'form' for x-www-form-urlencoded
+            /**
+             * WHY: Playwright uses the 'form' key to automatically set the 
+             * 'application/x-www-form-urlencoded' Content-Type and format the body.
+             */
+            httpRequestOptions.form = body;
         } else {
-            options.data = body; // Playwright uses 'data' for application/json
-            if (!options.headers['Content-Type']) {
-                options.headers['Content-Type'] = 'application/json';
+            httpRequestOptions.data = body;
+            if (!httpRequestOptions.headers['Content-Type']) {
+                httpRequestOptions.headers['Content-Type'] = 'application/json';
             }
         }
     }
 
-    const fullUrl = baseUrl ? `${baseUrl}${url}` : url;
+    // 3. URL Construction
+    const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
 
-    switch (method.toUpperCase()) {
-        case 'POST': response = await request.post(fullUrl, options); break;
-        case 'GET': response = await request.get(fullUrl, options); break;
-        case 'PUT': response = await request.put(fullUrl, options); break;
-        case 'DELETE': response = await request.delete(fullUrl, options); break;
-        case 'PATCH': response = await request.patch(fullUrl, options); break;
-        default: throw new Error(`Unsupported HTTP method: ${method}`);
+    // 4. Request Execution
+    const networkResponse = await executeNetworkCall(request, method, requestUrl, httpRequestOptions);
+
+    // 5. Response Sanitization and Parsing
+    const statusCode = networkResponse.status();
+    const responseHeaders = networkResponse.headers();
+    const parsedBody = await parseResponseBody(networkResponse);
+
+    return {
+        status: statusCode,
+        body: parsedBody,
+        headers: responseHeaders
+    };
+}
+
+/**
+ * Internal helper to map HTTP methods to Playwright request actions.
+ * 
+ * WHY: Separating the execution logic from the configuration logic adheres 
+ * to the Single Responsibility Principle, making the code easier to maintain.
+ */
+async function executeNetworkCall(request, method, url, options) {
+    const verb = method.toUpperCase();
+    switch (verb) {
+        case 'POST': return await request.post(url, options);
+        case 'GET': return await request.get(url, options);
+        case 'PUT': return await request.put(url, options);
+        case 'DELETE': return await request.delete(url, options);
+        case 'PATCH': return await request.patch(url, options);
+        default: throw new Error(`Unsupported HTTP method: ${verb}`);
     }
+}
 
-    // const status = response.status();
-    // const responseHeaders = response.headers(); // <--- 1. Capture headers here
-    // let bodyData = null;
-    // const contentType = response.headers()['content-type'] || '';
-
-    // try {
-    //     if (contentType.includes('application/json')) {
-    //         bodyData = await response.json();
-    //     } else {
-    //         bodyData = await response.text();
-    //     }
-    // } catch (err) {
-    //     console.warn(`Could not parse body: ${err}`);
-    // }
-
-    // return { status, body: bodyData, headers: responseHeaders };
-    const status = response.status();
-    const responseHeaders = response.headers();
-    let bodyData = null;
-
+/**
+ * Intelligent response body parser.
+ * 
+ * WHY: API responses are not always JSON. This helper attempts to parse JSON 
+ * first but gracefully falls back to plain text (common for success messages 
+ * in Parabank), ensuring tests don't crash on non-JSON payloads.
+ */
+async function parseResponseBody(response) {
     try {
-        // 1. Always get the raw text first
         const rawText = await response.text();
+        if (!rawText) return null;
 
         try {
-            // 2. Try to parse it as JSON
-            bodyData = JSON.parse(rawText);
-        } catch (e) {
-            // 3. If parsing fails, it's just a plain string (like Parabank's transfer message)
-            bodyData = rawText;
+            return JSON.parse(rawText);
+        } catch (jsonError) {
+            /**
+             * WHY: If JSON parsing fails, we return the raw text. This is 
+             * intentional for endpoints that return simple confirmation strings.
+             */
+            return rawText;
         }
-    } catch (err) {
-        console.warn(`Could not read response body: ${err}`);
+    } catch (readError) {
+        console.warn(`CRITICAL: Could not read response body: ${readError.message}`);
+        return null;
     }
+}
 
-    return { status, body: bodyData, headers: responseHeaders };
+/**
+ * Extracts a specific cookie by name from the response headers.
+ * 
+ * WHY: Playwright lowercases all header keys. This helper handles 
+ * 'set-cookie' regardless of whether it is an array or a single string,
+ * and extracts only the 'Name=Value' part needed for subsequent requests.
+ * 
+ * @param {Object} headers - The headers object from the response.
+ * @param {string} cookieName - Name of the cookie (e.g., 'JSESSIONID').
+ * @returns {string | null}
+ */
+export function extractCookie(headers, cookieName) {
+    const setCookie = headers['set-cookie'];
+    if (!setCookie) return null;
+
+    // Normalize to an array
+    const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+
+    // Find the cookie entry starting with the desired name (case-insensitive)
+    const targetCookie = cookieArray.find(c =>
+        c.trim().split('=')[0].toLowerCase() === cookieName.toLowerCase()
+    );
+
+    if (!targetCookie) return null;
+
+    // Return the 'Name=Value' part (before the first semicolon)
+    return targetCookie.split(';')[0];
 }

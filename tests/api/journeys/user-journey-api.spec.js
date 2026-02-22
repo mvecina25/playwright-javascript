@@ -9,6 +9,7 @@
 import { test, expect } from '../../../fixtures/indexFixtures.js';
 import { UserResponseSchema } from '../../../fixtures/api/schemas/userSchema';
 import { TransactionListSchema } from '../../../fixtures/api/schemas/transactionSchema';
+import { extractCookie } from '../../../utils/api-helper.js';
 
 /**
  * Centralized API endpoints (DRY Principle).
@@ -66,14 +67,16 @@ test.describe.serial('API - User Banking Journey @journey', () => {
             },
         });
 
-        /**
-         * WHY: Allow 301 (Protocol Redirect) or 302 (Login Redirect)
-         */
-        const successRedirects = [301, 302];
-        expect(successRedirects, `Expected 301 or 302 but got ${response.status}`).toContain(response.status);
+        // 1. Validate status (Successful login in Parabank results in 302)
+        expect([301, 302], `Login failed! Got status ${response.status}`).toContain(response.status);
 
-        sharedSessionId = extractSessionId(response.headers);
-        expect(sharedSessionId, 'JSESSIONID must be captured for stateful requests').toContain('JSESSIONID');
+        // 2. Use the helper from api-helper.js
+        sharedSessionId = extractCookie(response.headers, 'JSESSIONID');
+
+        // 3. Assert with a clear error message
+        expect(sharedSessionId, 'Failed to extract JSESSIONID. Check if credentials are valid and server is responding.').toBeTruthy();
+
+        console.log(`Captured Session: ${sharedSessionId}`);
     });
 
     test('TC-API-02: should validate user profile via contract schema', async ({ apiRequest }) => {
@@ -81,7 +84,10 @@ test.describe.serial('API - User Banking Journey @journey', () => {
             method: 'GET',
             url: PARABANK_ENDPOINTS.userDetails(userContext.username, userContext.password),
             baseUrl: process.env.APP_BASE_URL,
-            headers: { 'Accept': 'application/json' },
+            headers: {
+                'Cookie': sharedSessionId,
+                'Accept': 'application/json'
+            },
         });
 
         expect(response.status).toBe(200);
@@ -92,6 +98,13 @@ test.describe.serial('API - User Banking Journey @journey', () => {
          * correct format, catching backend regressions early.
          */
         const validation = UserResponseSchema.safeParse(response.body);
+
+        if (!validation.success) {
+            // This will print EXACTLY what is wrong in your GitHub Actions logs
+            console.error('SCHEMA VALIDATION ERROR:', JSON.stringify(validation.error.format(), null, 2));
+            console.log('ACTUAL BODY RECEIVED:', JSON.stringify(response.body, null, 2));
+        }
+
         expect(validation.success, 'API response must match User Contract Schema').toBe(true);
     });
 

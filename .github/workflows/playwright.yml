@@ -10,7 +10,7 @@ on:
       environment_url:
         description: 'URL to run tests against'
         required: false
-        default: 'http://parabank.parasoft.com'
+        default: 'https://parabank.parasoft.com'
       grep_tag:
         description: 'Test tag to run (e.g., @journey, @smoke)'
         required: false
@@ -40,7 +40,7 @@ jobs:
       run: npx playwright test --grep ${{ github.event.inputs.grep_tag || '@journey' }} --project=chromium
       env:
         # Uses input from manual run, or defaults to the Parabank URL
-        APP_BASE_URL: ${{ github.event.inputs.environment_url || 'http://parabank.parasoft.com' }}
+        APP_BASE_URL: ${{ github.event.inputs.environment_url || 'https://parabank.parasoft.com' }}
 
     - name: Upload Report
       uses: actions/upload-artifact@v4

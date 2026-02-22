@@ -1,20 +1,16 @@
 /**
- * API - User Banking Journey
- * 
- * WHY: This suite validates the full lifecycle of a user's financial session, 
- * from authentication to ledger verification. We use .serial because each 
- * step depends on the state (session and funds) created by the previous one.
+ * WHY: This suite validates the full lifecycle of a user's financial session.
+ * We use .serial because each test depends on the authentication and state 
+ * (JSESSIONID and account funds) created by the previous step.
  */
-
 import { test, expect } from '../../../fixtures/indexFixtures.js';
 import { UserResponseSchema } from '../../../fixtures/api/schemas/userSchema';
 import { TransactionListSchema } from '../../../fixtures/api/schemas/transactionSchema';
 import { extractCookie } from '../../../utils/api-helper.js';
 
 /**
- * Centralized API endpoints (DRY Principle).
- * WHY: Consolidating URIs here prevents hardcoding strings within tests, 
- * making it easier to update the suite if the API version or paths change.
+ * WHY: Centralizing endpoints follows the DRY principle. If the Parabank API 
+ * version updates or paths change, we only modify this single object.
  */
 const PARABANK_ENDPOINTS = {
     loginHtml: '/parabank/login.htm',
@@ -23,161 +19,176 @@ const PARABANK_ENDPOINTS = {
     userDetails: (user, pass) => `/parabank/services/bank/login/${user}/${pass}`,
 };
 
-test.describe.serial('API - User Banking Journey @journey', () => {
+test.describe.serial('API - User Banking Journey - Ledger Validation', () => {
     let userContext;
     let sharedSessionId;
 
     /** 
-     * WHY: We generate the transfer amount once at the suite level. 
-     * This ensures consistency between the "Transfer" action and the "Search" 
-     * verification in subsequent tests.
+     * WHY: Generating the amount at the suite level ensures data parity 
+     * between the "Transfer" action and the "Search" verification steps.
      */
     const transferAmount = (Math.random() * (10 - 1) + 1).toFixed(2);
 
-    /**
-     * Helper: extractSessionId
-     * WHY: Parabank uses JSESSIONID for state management. This function 
-     * isolates the extraction logic from the test assertions, following the 
-     * Single Responsibility Principle (SRP).
-     */
-    const extractSessionId = (headers) => {
-        const setCookie = headers['set-cookie'];
-        if (!setCookie) return null;
+    test(
+        'TC-API-01: should authenticate and capture a valid session ID',
+        { tag: ['@api', '@smoke'] },
+        async ({ userAndAccountCreationForApiFixture, apiRequest }) => {
+            
+            await test.step('GIVEN a newly registered user with bank accounts', async () => {
+                /**
+                 * WHY: We leverage a high-level fixture to seed the database.
+                 * This follows the Single Responsibility Principle, ensuring this 
+                 * test focuses only on the API communication.
+                 */
+                userContext = userAndAccountCreationForApiFixture;
+            });
 
-        const cookieValue = Array.isArray(setCookie) ? setCookie[0] : setCookie;
-        return cookieValue.split(';')[0];
-    };
+            await test.step('WHEN the user authenticates via the legacy login form', async () => {
+                const response = await apiRequest({
+                    method: 'POST',
+                    url: PARABANK_ENDPOINTS.loginHtml,
+                    baseUrl: process.env.APP_BASE_URL,
+                    isFormData: true, // WHY: Parabank's legacy .htm endpoint expects form-data
+                    body: {
+                        username: userContext.username,
+                        password: userContext.password,
+                    },
+                });
 
-    test('TC-API-01: should authenticate and capture session', async ({ userAndAccountCreationForApiFixture, apiRequest }) => {
-        /**
-         * WHY: We use the userAndAccountCreationForApiFixture to ensure the 
-         * database is seeded with a valid user and accounts before we begin 
-         * the API interactions.
-         */
-        userContext = userAndAccountCreationForApiFixture;
+                /**
+                 * WHY: A successful login in Parabank results in a 302 Redirect. 
+                 * We verify the redirect status to ensure authentication was successful.
+                 */
+                expect([301, 302], `Login failed with status ${response.status}`).toContain(response.status);
 
-        const response = await apiRequest({
-            method: 'POST',
-            url: PARABANK_ENDPOINTS.loginHtml,
-            baseUrl: process.env.APP_BASE_URL,
-            isFormData: true, // Parabank legacy login requires form-urlencoded data
-            body: {
-                username: userContext.username,
-                password: userContext.password,
-            },
-        });
+                // Capture the session cookie required for subsequent REST calls
+                sharedSessionId = extractCookie(response.headers, 'JSESSIONID');
+            });
 
-       // Ensure we got a redirect (Success for Parabank login)
-        expect([301, 302], `Login failed! Got status ${response.status}`).toContain(response.status);
-
-        // Extract the cookie
-        sharedSessionId = extractCookie(response.headers, 'JSESSIONID');
-
-        // IMPROVED ASSERTION: If this fails, the log above in extractCookie will show us why
-        if (!sharedSessionId) {
-            console.log('FULL RESPONSE HEADERS:', JSON.stringify(response.headers, null, 2));
+            await test.step('THEN a valid JSESSIONID should be captured for stateful requests', async () => {
+                /**
+                 * WHY: Without a valid JSESSIONID, subsequent REST calls will 
+                 * return a 401/403 or empty data sets.
+                 */
+                expect(sharedSessionId, 'Session ID (JSESSIONID) was not found in response headers').toBeTruthy();
+            });
         }
+    );
 
-        expect(sharedSessionId, 'JSESSIONID must be captured for stateful requests').toBeTruthy();
-        console.log(`Captured Session: ${sharedSessionId}`);
-    });
+    test(
+        'TC-API-02: should validate user profile details against the contract schema',
+        { tag: ['@api', '@regression'] },
+        async ({ apiRequest }) => {
+            
+            await test.step('GIVEN a valid authenticated session', async () => {
+                expect(sharedSessionId).toBeTruthy();
+            });
 
-    test('TC-API-02: should validate user profile via contract schema', async ({ apiRequest }) => {
-        const response = await apiRequest({
-            method: 'GET',
-            url: PARABANK_ENDPOINTS.userDetails(userContext.username, userContext.password),
-            baseUrl: process.env.APP_BASE_URL,
-            headers: {
-                'Cookie': sharedSessionId,
-                'Accept': 'application/json'
-            },
-        });
+            await test.step('WHEN the user profile details are requested', async () => {
+                const response = await apiRequest({
+                    method: 'GET',
+                    url: PARABANK_ENDPOINTS.userDetails(userContext.username, userContext.password),
+                    baseUrl: process.env.APP_BASE_URL,
+                    headers: {
+                        'Cookie': sharedSessionId,
+                        'Accept': 'application/json'
+                    },
+                });
 
-        expect(response.status).toBe(200);
+                expect(response.status).toBe(200);
 
-        /**
-         * WHY: We use Zod's safeParse to perform contract testing. This ensures 
-         * the API provides all required fields (names, addresses, etc.) in the 
-         * correct format, catching backend regressions early.
-         */
-        const validation = UserResponseSchema.safeParse(response.body);
-
-        if (!validation.success) {
-            // This will print EXACTLY what is wrong in your GitHub Actions logs
-            console.error('SCHEMA VALIDATION ERROR:', JSON.stringify(validation.error.format(), null, 2));
-            console.log('ACTUAL BODY RECEIVED:', JSON.stringify(response.body, null, 2));
+                /**
+                 * WHY: We use Zod's safeParse to perform contract testing. This ensures 
+                 * the API provides all required PII (Personally Identifiable Information) 
+                 * in the correct format, catching backend regressions.
+                 */
+                await test.step('THEN user profile details should match the schema', async () => {
+                    const validation = UserResponseSchema.safeParse(response.body);
+    
+                    if (!validation.success) {
+                        console.error('SCHEMA ERROR:', JSON.stringify(validation.error.format(), null, 2));
+                    }
+    
+                    expect(validation.success, 'User profile API response does not match the expected schema').toBe(true);
+                });
+            });
         }
+    );
 
-        expect(validation.success, 'API response must match User Contract Schema').toBe(true);
-    });
+    test(
+        'TC-API-03: should successfully transfer funds between checking and savings accounts',
+        { tag: ['@api', '@regression'] },
+        async ({ apiRequest }) => {
+            const { checkingAccountId, savingsAccountId } = userContext;
 
-    test('TC-API-03: should execute internal funds transfer', async ({ apiRequest }) => {
-        const { checkingAccountId, savingsAccountId } = userContext;
+            await test.step('WHEN a POST request is sent to the transfer endpoint', async () => {
+                const queryParams = new URLSearchParams({
+                    fromAccountId: checkingAccountId,
+                    toAccountId: savingsAccountId,
+                    amount: transferAmount
+                }).toString();
 
-        /**
-         * WHY: URLSearchParams handles character encoding and formatting 
-         * automatically, preventing malformed URL strings during concatenation.
-         */
-        const queryParams = new URLSearchParams({
-            fromAccountId: checkingAccountId,
-            toAccountId: savingsAccountId,
-            amount: transferAmount
-        }).toString();
+                const response = await apiRequest({
+                    method: 'POST',
+                    url: `${PARABANK_ENDPOINTS.transfer}?${queryParams}`,
+                    baseUrl: process.env.APP_BASE_URL,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cookie': sharedSessionId
+                    }
+                });
 
-        const response = await apiRequest({
-            method: 'POST',
-            url: `${PARABANK_ENDPOINTS.transfer}?${queryParams}`,
-            baseUrl: process.env.APP_BASE_URL,
-            headers: {
-                'Accept': 'application/json',
-                'Cookie': sharedSessionId // Injecting the session ID captured in TC-01
-            }
-        });
+                expect(response.status).toBe(200);
 
-        expect(response.status).toBe(200);
-
-        /**
-         * WHY: Verifying the specific success message confirms that the 
-         * business logic correctly processed the source and destination IDs.
-         */
-        const expectedMessage = `Successfully transferred $${transferAmount} from account #${checkingAccountId} to account #${savingsAccountId}`;
-        expect(response.body).toBe(expectedMessage);
-    });
-
-    test('TC-API-04: should verify transaction ledger entry', async ({ apiRequest }) => {
-        const { checkingAccountId } = userContext;
-        const searchUrl = `${PARABANK_ENDPOINTS.accounts(checkingAccountId)}/${transferAmount}`;
-
-        const response = await apiRequest({
-            method: 'GET',
-            url: searchUrl,
-            baseUrl: process.env.APP_BASE_URL,
-            headers: {
-                'Accept': 'application/json',
-                'Cookie': sharedSessionId
-            }
-        });
-
-        expect(response.status).toBe(200);
-
-        /**
-         * WHY: Validating the transaction list against the schema ensures 
-         * that the ledger entry contains required fields like 'id', 'type', and 'date'.
-         */
-        const validation = TransactionListSchema.safeParse(response.body);
-        if (!validation.success) {
-            console.error('Ledger Schema Error:', JSON.stringify(validation.error.format(), null, 2));
+                /**
+                 * WHY: We verify the specific confirmation message to ensure 
+                 * the business logic correctly routed the funds between specific IDs.
+                 */
+                await test.step('THEN transfer funds should be successful', async () => {
+                    const expectedMessage = `Successfully transferred $${transferAmount} from account #${checkingAccountId} to account #${savingsAccountId}`;
+                    expect(response.body).toBe(expectedMessage);
+                });
+            });
         }
-        expect(validation.success, 'Transaction response must match Ledger Contract Schema').toBe(true);
+    );
 
-        /**
-         * WHY: We verify that the first result in the list matches the 
-         * specific amount and account from our previous transfer (TC-03), 
-         * ensuring data integrity across the system.
-         */
-        const latestTransaction = response.body[0];
-        expect(latestTransaction.accountId).toBe(Number(checkingAccountId));
-        expect(latestTransaction.amount).toBe(Number(transferAmount));
-        expect(latestTransaction.description).toContain('Funds Transfer Sent');
-    });
+    test(
+        'TC-API-04: should verify the transaction ledger entry matches the transfer amount',
+        { tag: ['@api', '@regression'] },
+        async ({ apiRequest }) => {
+            const { checkingAccountId } = userContext;
+
+            await test.step('WHEN querying the account transactions by amount', async () => {
+                const searchUrl = `${PARABANK_ENDPOINTS.accounts(checkingAccountId)}/${transferAmount}`;
+
+                const response = await apiRequest({
+                    method: 'GET',
+                    url: searchUrl,
+                    baseUrl: process.env.APP_BASE_URL,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cookie': sharedSessionId
+                    }
+                });
+
+                expect(response.status).toBe(200);
+
+                // Perform Schema Validation to ensure the list structure is intact
+                const validation = TransactionListSchema.safeParse(response.body);
+                expect(validation.success, 'Ledger response does not match Transaction schema').toBe(true);
+
+                const latestTransaction = response.body[0];
+
+                /**
+                 * WHY: We verify the top ledger entry specifically to ensure 
+                 * data integrity (IDs, amounts, and descriptions) across the system.
+                 */
+                await test.step('THEN the transaction details should reflect the previous transfer', async () => {
+                    expect(latestTransaction.accountId).toBe(Number(checkingAccountId));
+                    expect(latestTransaction.amount).toBe(Number(transferAmount));
+                    expect(latestTransaction.description).toContain('Funds Transfer Sent');
+                });
+            });
+        }
+    );
 });

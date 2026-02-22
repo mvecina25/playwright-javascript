@@ -1,5 +1,4 @@
 /**
- * Import the unified test and expect objects from the central indexFixtures file.
  * WHY: Centralizing fixture imports ensures all Page Objects (POMs) are 
  * pre-configured and share a single source of truth for dependencies.
  */
@@ -20,83 +19,91 @@ test.describe('Authentication - Registration Flow', () => {
         await expect(loginPage.page).toHaveURL(new RegExp(INDEX_PAGE));
     });
 
-    test('TC-01a: should register new user successfully @smoke @regression', async ({ loginPage, registerPage }) => {
-        const newAccountData = generateRandomUser();
+    test(
+        'TC-01a: should register a new user successfully',
+        { tag: ['@smoke', '@regression'] },
+        async ({ loginPage, registerPage }) => {
+            const newUserData = generateRandomUser();
 
-        await test.step('Submit registration form with unique credentials', async () => {
-            await loginPage.clickRegisterLink();
-            
-            // Confirm we have transitioned to the registration module
-            await expect(loginPage.page).toHaveURL(REGISTER_PAGE_URL);
+            await test.step('GIVEN the user navigates to the registration page', async () => {
+                await loginPage.clickRegisterLink();
+                
+                // WHY: Web-first assertions provide automatic retries for dynamic URL transitions
+                await expect(loginPage.page).toHaveURL(REGISTER_PAGE_URL);
+            });
 
-            await registerPage.registerNewUser(newAccountData);
+            await test.step('WHEN the user submits valid and unique registration details', async () => {
+                await registerPage.registerNewUser(newUserData);
 
-            /**
-             * WHY: Credentials are persisted to a JSON file to allow downstream 
-             * API or UI tests to reuse this specific user identity without re-registering.
-             */
-            await saveCredentials(
-                newAccountData.username,
-                newAccountData.password,
-                newAccountData.firstName,
-                newAccountData.lastName,
-                newAccountData.address.street,
-                newAccountData.address.city,
-                newAccountData.address.state,
-                newAccountData.address.zipCode,
-                newAccountData.phoneNumber,
-                newAccountData.ssn
-            );
-        });
+                /**
+                 * WHY: Credentials are persisted to a JSON file to facilitate 
+                 * downstream API or UI tests (serial execution) and manual debugging.
+                 */
+                await saveCredentials(
+                    newUserData.username,
+                    newUserData.password,
+                    newUserData.firstName,
+                    newUserData.lastName,
+                    newUserData.address.street,
+                    newUserData.address.city,
+                    newUserData.address.state,
+                    newUserData.address.zipCode,
+                    newUserData.phoneNumber,
+                    newUserData.ssn
+                );
+            });
 
-        await test.step('Verify account creation and automatic session start', async () => {
-            /**
-             * WHY: Parabank automatically logs the user in upon success. 
-             * We verify the username in the welcome message to ensure the session 
-             * is correctly mapped to the new database record.
-             */
-            await expect(registerPage.welcomeMessage).toContainText(newAccountData.username);
-            await expect(registerPage.registrationSuccessMessage)
-                .toContainText('Your account was created successfully. You are now logged in.');
-        });
-    });
+            await test.step('THEN the account should be created and a success message displayed', async () => {
+                /**
+                 * WHY: Parabank automatically initiates a session upon successful registration. 
+                 * We verify the greeting banner to ensure the session is correctly mapped.
+                 */
+                await expect(registerPage.welcomeMessage).toContainText(newUserData.username);
+                await expect(registerPage.registrationSuccessMessage)
+                    .toContainText('Your account was created successfully. You are now logged in.');
+            });
+        }
+    );
 
-    test('TC-01b: should prevent registration with an existing username @regression', async ({ loginPage, registerPage, homePage }) => {
-        const existingAccountData = generateRandomUser();
+    test(
+        'TC-01b: should prevent registration when using an existing username',
+        { tag: ['@regression'] },
+        async ({ loginPage, registerPage, homePage }) => {
+            const existingUserData = generateRandomUser();
 
-        await test.step('Establish a pre-existing user state', async () => {
-            /**
-             * WHY: To test duplicate username errors, we must first ensure the 
-             * username exists in the system. We perform a full registration flow.
-             */
-            await loginPage.clickRegisterLink();
-            await registerPage.registerNewUser(existingAccountData);
-            
-            // Logout to return to a state where we can attempt a fresh registration
-            await homePage.clickLogout();
-        });
+            await test.step('GIVEN a user identity is already registered in the system', async () => {
+                /**
+                 * WHY: To validate duplicate constraints, we must first establish 
+                 * a pre-existing state by completing a full registration.
+                 */
+                await loginPage.clickRegisterLink();
+                await registerPage.registerNewUser(existingUserData);
+                
+                // WHY: Logout ensures we are in a clean state to attempt a fresh registration
+                await homePage.clickLogout();
+            });
 
-        await test.step('Attempt registration with the same username', async () => {
-            await loginPage.clickRegisterLink();
-            
-            // Ensure the form is ready for input after the previous session
-            await expect(registerPage.firstNameInput).toBeVisible();
-    
-            /**
-             * WHY: We reuse the same data object. This follows the DRY principle 
-             * and ensures an exact collision on the 'username' primary key.
-             */
-            await registerPage.registerNewUser(existingAccountData);
-        });
+            await test.step('WHEN another registration is attempted using the same username', async () => {
+                await loginPage.clickRegisterLink();
+                
+                // WHY: Visibility check ensures the DOM is stable before interaction
+                await expect(registerPage.firstNameInput).toBeVisible();
+        
+                /**
+                 * WHY: We reuse the exact data object to ensure a collision 
+                 * on the unique 'username' primary key in the backend.
+                 */
+                await registerPage.registerNewUser(existingUserData);
+            });
 
-        await test.step('Validate collision error message', async () => {
-            /**
-             * WHY: The application should gracefully handle duplicate records 
-             * and provide clear feedback to the user rather than crashing or 
-             * allowing the duplicate entry.
-             */
-            await expect(registerPage.errorMessage).toBeVisible();
-            await expect(registerPage.errorMessage).toHaveText('This username already exists.');
-        });
-    });
+            await test.step('THEN a duplicate username error message should be displayed', async () => {
+                /**
+                 * WHY: Friendly error handling prevents system exposure and 
+                 * ensures the user is notified of the specific constraint violation.
+                 */
+                await expect(registerPage.errorMessage).toBeVisible();
+                await expect(registerPage.errorMessage).toHaveText('This username already exists.');
+            });
+        }
+    );
 });

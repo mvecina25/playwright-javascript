@@ -26,7 +26,7 @@ test.describe('Transfer Funds - Ledger Validation', () => {
     });
 
     test(
-        'should transfer funds from savings to checking and update account balances',
+        'TC-06: should transfer funds from savings to checking and update account balances',
         { tag: ['@smoke', '@regression'] },
         async ({ 
             userCreationFixture, 

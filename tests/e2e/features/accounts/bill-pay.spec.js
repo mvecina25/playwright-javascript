@@ -23,7 +23,7 @@ test.describe('Bills Payment - End to End Flow', () => {
     });
 
     test(
-        'should pay a bill successfully using a newly created savings account',
+        'TC-07: should pay a bill successfully using a newly created savings account',
         { tag: ['@smoke', '@regression'] },
         async ({ userCreationFixture, savingsAccountCreationFixture, homePage, billPayPage }) => {
             

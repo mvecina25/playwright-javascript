@@ -100,7 +100,7 @@ export default defineConfig({
      * WHY: 'retain-on-failure' saves disk space by only keeping traces 
      * for tests that actually require debugging.
      */
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
 

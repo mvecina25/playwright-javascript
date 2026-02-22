@@ -1,99 +1,131 @@
 /**
  * Custom Business Logic Fixtures
  * 
- * WHY: These fixtures encapsulate complex, multi-page setup workflows. 
- * This follows the Single Responsibility Principle (SRP) by moving setup 
- * logic out of the test files and into reusable components. Tests can 
- * simply request a 'savingsAccount' without knowing how it's created.
+ * WHY: These fixtures encapsulate multi-page business processes. By moving 
+ * setup logic here, we adhere to the Single Responsibility Principle (SRP). 
+ * Tests remain declarative—requesting a "state" (like a created user) 
+ * rather than executing the "process" to create it.
  */
 
 import { test as pomFixtures } from './pomFixtures';
 import { generateRandomUser, saveCredentials } from '../../utils/helpers';
 
+const INDEX_PAGE_URL = '/parabank/index.htm';
+
 export const test = pomFixtures.extend({
 
-  /**
-   * userCreationFixture
-   * 
-   * WHY: Every journey in Parabank requires a unique user. This fixture 
-   * automates the registration process so that regression tests always 
-   * operate on a fresh, isolated data set.
-   */
-  userCreationFixture: async ({ loginPage, registerPage, homePage }, use) => {
-    const newIdentity = generateRandomUser();
+    /**
+     * userCreationFixture
+     * 
+     * WHY: Provides a unique, authenticated user session. It includes a 
+     * retry mechanism because Parabank's registration endpoint frequently 
+     * fails due to eventual consistency lag in its internal database.
+     */
+    userCreationFixture: async ({ loginPage, registerPage, homePage, basePage }, use) => {
+        const newIdentity = generateRandomUser();
 
-    // Perform registration workflow
-    await loginPage.clickRegisterLink();
-    await registerPage.registerNewUser(newIdentity);
+        await basePage.navigateTo(INDEX_PAGE_URL);
+        await loginPage.clickRegisterLink();
+
+        /**
+         * WHY: Parabank occasionally fails to commit the new user record 
+         * before the UI redirects. We use toPass() to retry the registration 
+         * attempt until the welcome message confirms success.
+         */
+        await test.expect(async () => {
+            await registerPage.fillRegistrationForm(newIdentity);
+            await registerPage.submitRegistration();
+            await test.expect(registerPage.welcomeMessage).toBeVisible({ timeout: 1000 });
+        }).toPass({
+            intervals: [1000, 2000],
+            timeout: 10000
+        });
+
+        /**
+         * WHY: Persisting credentials to a JSON file serves as a 'flight recorder'. 
+         * If a regression occurs, developers can use these credentials to 
+         * manually reproduce the issue in the browser.
+         */
+        await saveCredentials(
+            newIdentity.username,
+            newIdentity.password,
+            newIdentity.firstName,
+            newIdentity.lastName,
+            newIdentity.address.street,
+            newIdentity.address.city,
+            newIdentity.address.state,
+            newIdentity.address.zipCode,
+            newIdentity.phoneNumber,
+            newIdentity.ssn
+        );
+
+        // Discovery step: Capture the checking account Parabank creates automatically
+        await homePage.navigateViaLeftMenu('Accounts Overview');
+        const checkingAccountId = await homePage.getFirstAccountId();
+
+        /**
+         * WHY: We log out to ensure the test starts from a clean, unauthenticated 
+         * state. This prevents session bleed between fixtures and tests.
+         */
+        await homePage.clickLogout();
+
+        await use({
+            ...newIdentity,
+            ...newIdentity.address, // Flattened for cleaner test assertions
+            checkingAccountId
+        });
+    },
 
     /**
-     * WHY: We persist credentials to a local JSON file. This acts as an 
-     * 'audit trail' and allows developers to manually inspect the 
-     * account if a test fails during the CI process.
+     * savingsAccountCreationFixture
+     * 
+     * WHY: Extends the user state by adding a secondary financial product. 
+     * This allows tests for Transfers or Bill Pay to operate immediately 
+     * without repeating the onboarding steps.
      */
-    await saveCredentials(
-      newIdentity.username,
-      newIdentity.password,
-      newIdentity.firstName,
-      newIdentity.lastName,
-      newIdentity.address.street,
-      newIdentity.address.city,
-      newIdentity.address.state,
-      newIdentity.address.zipCode,
-      newIdentity.phoneNumber,
-      newIdentity.ssn
-    );
+    savingsAccountCreationFixture: async ({ userCreationFixture, loginPage, homePage, openAccountPage }, use) => {
+        
+        // Re-authenticate using the credentials from the dependency fixture
+        await loginPage.login(userCreationFixture.username, userCreationFixture.password);
 
-    // Navigate to discover the account created by default upon registration
-    await homePage.navigateViaLeftMenu('Accounts Overview');
-    const checkingAccountId = await homePage.getFirstAccountId();
+        await homePage.navigateViaLeftMenu('Open New Account');
+        await openAccountPage.openAccount('SAVINGS', userCreationFixture.checkingAccountId);
+
+        const savingsAccountId = await openAccountPage.getNewAccountId();
+
+        /**
+         * WHY: We validate the ID immediately. Failing the fixture here 
+         * provides a clearer error than letting the test fail later 
+         * with a 'null' account ID error.
+         */
+        if (!savingsAccountId) {
+            throw new Error(`Fixture Setup Failed: Savings Account ID was not captured for user ${userCreationFixture.username}`);
+        }
+
+        await use({
+            savingsAccountId
+        });
+    },
 
     /**
-     * WHY: We logout to ensure that the test utilizing this fixture starts 
-     * from the login page, allowing us to verify the full authentication 
-     * flow if needed, and to prevent session leakage between fixtures.
+     * userAndAccountCreationForApiFixture
+     * 
+     * WHY: This specialized fixture is designed for API-level tests that 
+     * require a pre-configured database state (User + Checking + Savings). 
+     * It uses the UI for setup because Parabank's API does not always 
+     * initialize session cookies correctly without a UI-based login.
      */
-    await homePage.clickLogout();
-
-    // Expose the structured user data to the test
-    await use({
-      ...newIdentity,
-      ...newIdentity.address, // Flattening address for easier access in tests
-      checkingAccountId
-    });
-  },
-
-  /**
-   * savingsAccountCreationFixture
-   * 
-   * WHY: Many banking scenarios (Transfers, Bill Pay) require at least two 
-   * accounts. This fixture provides a second account (Savings) by building 
-   * on top of the userCreationFixture.
-   */
-  savingsAccountCreationFixture: async ({ userCreationFixture, loginPage, homePage, openAccountPage }, use) => {
-    
-    // Re-authenticate to simulate a realistic user session start
-    await loginPage.login(userCreationFixture.username, userCreationFixture.password);
-
-    // Perform the "Open New Account" business process
-    await homePage.navigateViaLeftMenu('Open New Account');
-    await openAccountPage.openAccount('SAVINGS');
-
-    const accountId = await openAccountPage.getNewAccountId();
-
-    /**
-     * WHY: We validate the ID is captured before 'using' the fixture. 
-     * This ensures the test fails at the setup stage with a clear 
-     * indication if the account service is down.
-     */
-    if (!accountId) {
-      throw new Error('Failed to capture New Savings Account ID during fixture setup.');
+    userAndAccountCreationForApiFixture: async ({ userCreationFixture, savingsAccountCreationFixture }, use) => {
+        /**
+         * WHY: By injecting both previous fixtures, we follow the DRY principle. 
+         * This fixture simply aggregates the result of the registration and 
+         * account opening flows into a single object for the API tests.
+         */
+        await use({
+            ...userCreationFixture,
+            savingsAccountId: savingsAccountCreationFixture.savingsAccountId
+        });
     }
-
-    await use({
-      accountId: accountId
-    });
-  }
 
 });
 

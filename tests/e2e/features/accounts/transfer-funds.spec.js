@@ -1,5 +1,4 @@
 /**
- * Import the unified test and expect objects from the central indexFixtures file.
  * WHY: Centralizing fixtures ensures that Page Objects and custom setup logic (like 
  * user/account creation) are consistently initialized across the suite.
  */
@@ -8,7 +7,7 @@ import { test, expect } from '../../../../fixtures/indexFixtures.js';
 const TRANSFER_AMOUNT = '10.00';
 const INDEX_URL = '/parabank/index.htm';
 
-test.describe('Transfer Funds', () => {
+test.describe('Transfer Funds - Ledger Validation', () => {
 
     /**
      * Helper: Sanitizes currency strings and converts them to floats.
@@ -26,75 +25,85 @@ test.describe('Transfer Funds', () => {
         await expect(loginPage.page).toHaveURL(new RegExp(INDEX_URL));
     });
 
-    test('TC-06: should transfer funds from savings to checking @smoke @regression', async ({ 
-        userCreationFixture, 
-        savingsAccountCreationFixture, 
-        homePage, 
-        transferFundsPage, 
-        accountsOverviewPage 
-    }) => {
+    test(
+        'should transfer funds from savings to checking and update account balances',
+        { tag: ['@smoke', '@regression'] },
+        async ({ 
+            userCreationFixture, 
+            savingsAccountCreationFixture, 
+            homePage, 
+            transferFundsPage, 
+            accountsOverviewPage 
+        }) => {
+            
+            // Local state to track balances across steps
+            let balanceBefore = { checking: 0, savings: 0 };
 
-        // Log the test context for easier debugging in CI environments
-        console.log(`User: ${userCreationFixture.username} | Savings Account: ${savingsAccountCreationFixture.accountId}`);
+            await test.step('GIVEN the initial account balances are captured', async () => {
+                /**
+                 * WHY: Logging context helps during CI/CD failure analysis to trace 
+                 * the specific transaction IDs in the backend logs.
+                 */
+                console.log(`User: ${userCreationFixture.username} | Savings: ${savingsAccountCreationFixture.savingsAccountId}`);
 
-        let balanceBefore = { checking: 0, savings: 0 };
+                await homePage.navigateViaLeftMenu('Accounts Overview');
 
-        await test.step('Capture initial account states', async () => {
-            await homePage.navigateViaLeftMenu('Accounts Overview');
+                const rawChecking = await accountsOverviewPage.getAccountBalance(userCreationFixture.checkingAccountId);
+                const rawSavings = await accountsOverviewPage.getAccountBalance(savingsAccountCreationFixture.savingsAccountId);
 
-            const rawChecking = await accountsOverviewPage.getAccountBalance(userCreationFixture.checkingAccountId);
-            const rawSavings = await accountsOverviewPage.getAccountBalance(savingsAccountCreationFixture.accountId);
+                /**
+                 * WHY: Validating format before parsing ensures the UI is rendering 
+                 * correct financial formatting (currency symbols and decimals).
+                 */
+                expect(rawChecking).toMatch(/^\$\d+\.\d{2}$/);
+                expect(rawSavings).toMatch(/^\$\d+\.\d{2}$/);
 
-            /**
-             * WHY: We validate the format before parsing to ensure the UI is 
-             * correctly rendering currency symbols and decimal places.
-             */
-            expect(rawChecking).toMatch(/^\$\d+\.\d{2}$/);
-            expect(rawSavings).toMatch(/^\$\d+\.\d{2}$/);
+                balanceBefore.checking = parseBalance(rawChecking);
+                balanceBefore.savings = parseBalance(rawSavings);
+            });
 
-            balanceBefore.checking = parseBalance(rawChecking);
-            balanceBefore.savings = parseBalance(rawSavings);
-        });
+            await test.step('WHEN the user performs a fund transfer via the UI', async () => {
+                await homePage.navigateViaLeftMenu('Transfer Funds');
 
-        await test.step('Perform fund transfer via UI', async () => {
-            await homePage.navigateViaLeftMenu('Transfer Funds');
+                /**
+                 * WHY: The transferFunds method encapsulates form interaction. 
+                 * We transfer from the created savings account to the default checking account.
+                 */
+                await transferFundsPage.transferFunds(
+                    TRANSFER_AMOUNT,
+                    savingsAccountCreationFixture.savingsAccountId,
+                    userCreationFixture.checkingAccountId
+                );
+            });
 
-            /**
-             * WHY: The transferFunds method encapsulates the form filling and submission.
-             * We move from the 'Savings' (source) to the 'Checking' (destination).
-             */
-            await transferFundsPage.transferFunds(
-                TRANSFER_AMOUNT,
-                savingsAccountCreationFixture.accountId,
-                userCreationFixture.checkingAccountId
-            );
-        });
-        
-        await test.step('Verify transaction confirmation', async () => {
-            /**
-             * WHY: Validating the specific account numbers in the success message 
-             * ensures the backend processed the correct source and destination.
-             */
-            const expectedMsg = `$${TRANSFER_AMOUNT} has been transferred from account #${savingsAccountCreationFixture.accountId} to account #${userCreationFixture.checkingAccountId}.`;
-            await expect(transferFundsPage.successMessage).toContainText(expectedMsg);
-        });
+            await test.step('THEN a successful transaction confirmation should be displayed', async () => {
+                /**
+                 * WHY: Validating specific account numbers in the confirmation message 
+                 * ensures the backend correctly routed the source and destination.
+                 */
+                const expectedMsg = `$${TRANSFER_AMOUNT} has been transferred from account #${savingsAccountCreationFixture.savingsAccountId} to account #${userCreationFixture.checkingAccountId}.`;
+                
+                // WHY: Web-first assertions automatically retry for dynamic content
+                await expect(transferFundsPage.successMessage).toContainText(expectedMsg);
+            });
 
-        await test.step('Validate ledger integrity (Math Verification)', async () => {
-            await homePage.navigateViaLeftMenu('Accounts Overview');
-    
-            const checkingAfter = parseBalance(await accountsOverviewPage.getAccountBalance(userCreationFixture.checkingAccountId));
-            const savingsAfter = parseBalance(await accountsOverviewPage.getAccountBalance(savingsAccountCreationFixture.accountId));
-            const transferVal = parseFloat(TRANSFER_AMOUNT);
+            await test.step('AND the updated balances should reflect the transaction amount', async () => {
+                await homePage.navigateViaLeftMenu('Accounts Overview');
 
-            /**
-             * WHY: toBeCloseTo(X, 2) is used to handle floating-point precision 
-             * issues inherent in JavaScript math when dealing with cents/decimals.
-             */
-            expect(checkingAfter, 'Checking account balance should increase by the transfer amount')
-                .toBeCloseTo(balanceBefore.checking + transferVal, 2);
+                const checkingAfter = parseBalance(await accountsOverviewPage.getAccountBalance(userCreationFixture.checkingAccountId));
+                const savingsAfter = parseBalance(await accountsOverviewPage.getAccountBalance(savingsAccountCreationFixture.savingsAccountId));
+                const transferVal = parseFloat(TRANSFER_AMOUNT);
 
-            expect(savingsAfter, 'Savings account balance should decrease by the transfer amount')
-                .toBeCloseTo(balanceBefore.savings - transferVal, 2);
-        });
-    });
+                /**
+                 * WHY: toBeCloseTo(X, 2) is used to handle floating-point precision 
+                 * issues inherent in JavaScript math when dealing with cents.
+                 */
+                expect(checkingAfter, 'Checking account balance should increase')
+                    .toBeCloseTo(balanceBefore.checking + transferVal, 2);
+
+                expect(savingsAfter, 'Savings account balance should decrease')
+                    .toBeCloseTo(balanceBefore.savings - transferVal, 2);
+            });
+        }
+    );
 });

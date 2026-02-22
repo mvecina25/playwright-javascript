@@ -15,7 +15,7 @@ const INITIAL_ACCOUNT_BALANCE = '$100.00';
 const TRANSACTION_AMOUNT = '1.00'; 
 const LOGIN_URL = '/parabank/index.htm';
 
-test.describe('Complete User Banking Journey', () => {
+test.describe('Complete User Banking Journey @journey', () => {
 
     let userProfile;           
     let savingsAccountId;   

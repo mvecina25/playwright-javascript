@@ -134,28 +134,34 @@ async function parseResponseBody(response) {
 /**
  * Extracts a specific cookie by name from the response headers.
  * 
- * WHY: Playwright lowercases all header keys. This helper handles 
- * 'set-cookie' regardless of whether it is an array or a single string,
- * and extracts only the 'Name=Value' part needed for subsequent requests.
- * 
- * @param {Object} headers - The headers object from the response.
- * @param {string} cookieName - Name of the cookie (e.g., 'JSESSIONID').
- * @returns {string | null}
+ * WHY: In CI environments, Playwright often merges multiple 'set-cookie' 
+ * headers into a single string separated by newlines (\n). This robust 
+ * parser splits those entries and correctly isolates the Name=Value pair.
  */
 export function extractCookie(headers, cookieName) {
+    // Playwright normalizes all header keys to lowercase
     const setCookie = headers['set-cookie'];
-    if (!setCookie) return null;
+    
+    if (!setCookie) {
+        console.error(' [DEBUG] No set-cookie header found in: ', JSON.stringify(headers));
+        return null;
+    }
 
-    // Normalize to an array
-    const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+    // 1. Split by newline (Playwright's merge character) or handle as array
+    const cookieEntries = Array.isArray(setCookie) 
+        ? setCookie 
+        : setCookie.split('\n');
 
-    // Find the cookie entry starting with the desired name (case-insensitive)
-    const targetCookie = cookieArray.find(c =>
-        c.trim().split('=')[0].toLowerCase() === cookieName.toLowerCase()
-    );
+    for (const entry of cookieEntries) {
+        // 2. Each entry looks like "JSESSIONID=123; Path=/; HttpOnly"
+        // We only care about the part before the first semicolon
+        const firstPart = entry.split(';')[0].trim();
+        const [name, value] = firstPart.split('=');
 
-    if (!targetCookie) return null;
+        if (name && name.toLowerCase() === cookieName.toLowerCase()) {
+            return firstPart; // Returns "JSESSIONID=XXXXX"
+        }
+    }
 
-    // Return the 'Name=Value' part (before the first semicolon)
-    return targetCookie.split(';')[0];
+    return null;
 }

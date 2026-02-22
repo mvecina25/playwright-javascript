@@ -67,15 +67,18 @@ test.describe.serial('API - User Banking Journey @journey', () => {
             },
         });
 
-        // 1. Validate status (Successful login in Parabank results in 302)
+       // Ensure we got a redirect (Success for Parabank login)
         expect([301, 302], `Login failed! Got status ${response.status}`).toContain(response.status);
 
-        // 2. Use the helper from api-helper.js
+        // Extract the cookie
         sharedSessionId = extractCookie(response.headers, 'JSESSIONID');
 
-        // 3. Assert with a clear error message
-        expect(sharedSessionId, 'Failed to extract JSESSIONID. Check if credentials are valid and server is responding.').toBeTruthy();
+        // IMPROVED ASSERTION: If this fails, the log above in extractCookie will show us why
+        if (!sharedSessionId) {
+            console.log('FULL RESPONSE HEADERS:', JSON.stringify(response.headers, null, 2));
+        }
 
+        expect(sharedSessionId, 'JSESSIONID must be captured for stateful requests').toBeTruthy();
         console.log(`Captured Session: ${sharedSessionId}`);
     });
 

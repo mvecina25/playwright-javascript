@@ -1,51 +1,77 @@
-name: Playwright Tests
+name: 💨 Smoke Tests
+
 on:
+  # /**
+  #  * WHY: Smoke tests run on push and PR to main to act as a "Gatekeeper," 
+  #  * ensuring that critical business flows are not broken by new code.
+  #  */
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  # This section enables manual runs
+  
+  # /**
+  #  * WHY: workflow_dispatch allows QA or DevOps to trigger a fast validation 
+  #  * against specific environments (e.g., Staging or UAT) manually.
+  #  */
   workflow_dispatch:
     inputs:
       environment_url:
-        description: 'URL to run tests against'
+        description: 'Target Application URL (Falls back to Repo Variable if empty)'
         required: false
-        default: 'https://parabank.parasoft.com'
+        default: ''
       grep_tag:
-        description: 'Test tag to run (e.g., @journey, @smoke)'
+        description: 'Playwright Grep Tag'
         required: false
-        default: '@journey'
+        default: '@smoke'
 
 jobs:
-  test:
-    timeout-minutes: 60
+  smoke-test:
+    name: Execute Smoke Suite
+    timeout-minutes: 30
     runs-on: ubuntu-latest
+    
     steps:
-    - uses: actions/checkout@v4
+    - name: GIVEN the source code is checked out
+      uses: actions/checkout@v4
 
-    - name: Setup Node.js
+    - name: AND the Node.js runtime is configured
       uses: actions/setup-node@v4
       with:
         node-version: 20
+        # WHY: Caching npm dependencies significantly reduces build time by avoiding re-downloads.
         cache: 'npm'
 
-    - name: Install dependencies
-      # Fixed to handle the fsevents/EBADPLATFORM error
+    - name: WHEN the project dependencies are installed
+      # /**
+      #  * WHY: --force handles peer dependency conflicts. 
+      #  * --omit=optional prevents installation of fsevents/macOS-only packages 
+      #  * on the Linux runner, avoiding EBADPLATFORM errors.
+      #  */
       run: npm install --force --omit=optional
 
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+    - name: AND the Playwright browser binaries are provisioned
+      # WHY: Provisioning only 'chromium' optimizes the CI runner credits and speed.
+      run: npx playwright install --with-deps chromium
 
-    - name: Run Playwright tests
-      run: npx playwright test --grep ${{ github.event.inputs.grep_tag || '@journey' }} --project=chromium
+    - name: THEN the automated smoke test suite is executed
+      # /**
+      #  * WHY: We prioritize manual input for APP_BASE_URL, falling back to 
+      #  * Repository Variables (vars.APP_BASE_URL) for automated runs.
+      #  */
+      run: npx playwright test --grep ${{ github.event.inputs.grep_tag || '@smoke' }} --project=chromium
       env:
-        # Uses input from manual run, or defaults to the Parabank URL
-        APP_BASE_URL: ${{ github.event.inputs.environment_url || 'https://parabank.parasoft.com' }}
+        APP_BASE_URL: ${{ github.event.inputs.environment_url || vars.APP_BASE_URL }}
 
-    - name: Upload Report
+    - name: AND the test execution report is preserved as a build artifact
+      # /**
+      #  * WHY: Ensures the report is uploaded even if tests fail, 
+      #  * which is critical for debugging regressions in the CI pipeline.
+      #  */
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report
+        name: smoke-test-report
         path: playwright-report/
-        retention-days: 30
+        # WHY: Smoke test reports have a shorter retention to keep the artifact storage lean.
+        retention-days: 7

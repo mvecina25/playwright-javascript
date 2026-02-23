@@ -19,7 +19,7 @@ const PARABANK_ENDPOINTS = {
     userDetails: (user, pass) => `/parabank/services/bank/login/${user}/${pass}`,
 };
 
-test.describe.serial('API - User Banking Journey - Ledger Validation @journey', () => {
+test.describe.serial('API - User Banking Journey - Ledger Validation', { tag: ['@smoke', '@journey'] }, () => {
     let userContext;
     let sharedSessionId;
 
@@ -31,7 +31,6 @@ test.describe.serial('API - User Banking Journey - Ledger Validation @journey', 
 
     test(
         'TC-API-01: should authenticate and capture a valid session ID',
-        { tag: ['@api', '@smoke'] },
         async ({ userAndAccountCreationForApiFixture, apiRequest }) => {
             
             await test.step('GIVEN a newly registered user with bank accounts', async () => {
@@ -77,7 +76,6 @@ test.describe.serial('API - User Banking Journey - Ledger Validation @journey', 
 
     test(
         'TC-API-02: should validate user profile details against the contract schema',
-        { tag: ['@api', '@regression'] },
         async ({ apiRequest }) => {
             
             await test.step('GIVEN a valid authenticated session', async () => {
@@ -117,7 +115,6 @@ test.describe.serial('API - User Banking Journey - Ledger Validation @journey', 
 
     test(
         'TC-API-03: should successfully transfer funds between checking and savings accounts',
-        { tag: ['@api', '@regression'] },
         async ({ apiRequest }) => {
             const { checkingAccountId, savingsAccountId } = userContext;
 
@@ -154,7 +151,6 @@ test.describe.serial('API - User Banking Journey - Ledger Validation @journey', 
 
     test(
         'TC-API-04: should verify the transaction ledger entry matches the transfer amount',
-        { tag: ['@api', '@regression'] },
         async ({ apiRequest }) => {
             const { checkingAccountId } = userContext;
 

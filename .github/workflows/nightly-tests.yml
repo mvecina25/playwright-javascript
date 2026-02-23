@@ -1,0 +1,74 @@
+name: 🌙 Nightly Regression
+
+on:
+  schedule:
+    # /**
+    #  * WHY: We schedule the suite for 14:00 UTC (9:00 AM EST) to ensure the 
+    #  * team has fresh results at the start of the workday.
+    #  */
+    - cron: '0 14 * * *'
+    
+  workflow_dispatch:
+    # /**
+    #  * WHY: workflow_dispatch enables manual triggering for debugging 
+    #  * specific environments or running targeted test sets via grep.
+    #  */
+    inputs:
+      environment_url:
+        description: 'Target Application URL (Falls back to Repo Variable if empty)'
+        required: false
+        default: ''
+      grep_tag:
+        description: 'Playwright Grep Tag'
+        required: false
+        default: '@nightly'
+
+jobs:
+  nightly-test:
+    name: Execute Nightly Full Suite
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: GIVEN the repository source code is checked out
+      uses: actions/checkout@v4
+
+    - name: AND the Node.js environment is initialized
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        # WHY: npm caching significantly reduces build time by reusing stored modules
+        cache: 'npm'
+
+    - name: WHEN the project dependencies are installed
+    #   /**
+    #    * WHY: --force bypasses peer dependency conflicts. 
+    #    * --omit=optional prevents platform-specific errors (like fsevents on Linux) 
+    #    * which commonly cause EBADPLATFORM failures in CI.
+    #    */
+      run: npm install --force --omit=optional
+
+    - name: AND the Playwright browser binaries are provisioned
+      # WHY: We specify 'chromium' to reduce setup time and artifact size in the runner
+      run: npx playwright install --with-deps chromium
+
+    - name: THEN the automated nightly regression suite is executed
+    #   /**
+    #    * WHY: We use the grep tag to filter the nightly subset. 
+    #    * APP_BASE_URL prioritizes manual input before falling back to a Repo Variable.
+    #    */
+      run: npx playwright test --grep ${{ github.event.inputs.grep_tag || '@nightly' }} --project=chromium
+      env:
+        APP_BASE_URL: ${{ github.event.inputs.environment_url || vars.APP_BASE_URL }}
+
+    - name: AND the test execution report is preserved as a build artifact
+    #   /**
+    #    * WHY: Ensures that even if tests fail (which is an expected 
+    #    * outcome of a regression suite), the HTML report is preserved for debugging.
+    #    */
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: nightly-test-report
+        path: playwright-report/
+        retention-days: 30

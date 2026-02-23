@@ -24,7 +24,7 @@ test.describe.serial('Authentication - Login Flow', () => {
 
     test(
         'TC-02a: should allow a newly registered user to authenticate successfully',
-        { tag: ['@smoke', '@regression'] },
+        { tag: ['@regression'] },
         async ({ loginPage, registerPage, homePage }) => {
             const newIdentity = generateRandomUser();
 
@@ -92,7 +92,7 @@ test.describe.serial('Authentication - Login Flow', () => {
 
     test(
         'TC-03: should allow navigation to all core banking modules via the sidebar menu',
-        { tag: ['@smoke', '@regression'] },
+        { tag: ['@regression'] },
         async ({ loginPage, homePage }) => {
             
             await test.step('GIVEN an authenticated user session is active', async () => {

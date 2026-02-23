@@ -30,7 +30,7 @@ test.describe.serial('Accounts - Savings Lifecycle', () => {
 
     test(
         'TC-04: should create savings account and capture account number',
-        { tag: ['@smoke', '@regression'] },
+        { tag: ['@regression'] },
         async ({ userCreationFixture, loginPage, homePage, openAccountPage }) => {
             let savingsAccountId;
             let checkingAccountId;
@@ -82,7 +82,7 @@ test.describe.serial('Accounts - Savings Lifecycle', () => {
 
     test(
         'TC-05: should display and validate the balance details',
-        { tag: ['@smoke', '@regression'] },
+        { tag: ['@regression'] },
         async ({ savingsAccountCreationFixture, basePage, accountActivityPage }) => {
             
             await test.step('GIVEN a savings account has been successfully created', async () => {

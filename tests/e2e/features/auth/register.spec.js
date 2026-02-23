@@ -21,7 +21,7 @@ test.describe('Authentication - Registration Flow', () => {
 
     test(
         'TC-01a: should register a new user successfully',
-        { tag: ['@smoke', '@regression'] },
+        { tag: ['@regression'] },
         async ({ loginPage, registerPage }) => {
             const newUserData = generateRandomUser();
 

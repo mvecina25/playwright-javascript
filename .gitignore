@@ -1,6 +1,8 @@
 
 # Playwright
 node_modules/
+/allure-results/
+/allure-report/
 /test-results/
 /playwright-report/
 /blob-report/

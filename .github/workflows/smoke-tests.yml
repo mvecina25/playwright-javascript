@@ -1,19 +1,15 @@
 name: 💨 Smoke Tests
 
 on:
-  # /**
-  #  * WHY: Smoke tests run on push and PR to main to act as a "Gatekeeper," 
-  #  * ensuring that critical business flows are not broken by new code.
-  #  */
+  # WHY: Smoke tests run on push and PR to main to act as a "Gatekeeper," 
+  # ensuring that critical business flows are not broken by new code.
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
   
-  # /**
-  #  * WHY: workflow_dispatch allows QA or DevOps to trigger a fast validation 
-  #  * against specific environments (e.g., Staging or UAT) manually.
-  #  */
+  # WHY: workflow_dispatch allows QA or DevOps to trigger a fast validation 
+  # against specific environments (e.g., Staging or UAT) manually.
   workflow_dispatch:
     inputs:
       environment_url:
@@ -24,6 +20,13 @@ on:
         description: 'Playwright Grep Tag'
         required: false
         default: '@smoke'
+
+# WHY: Specific permissions are required for the workflow to write the report 
+# to the gh-pages branch and manage deployment tokens.
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   smoke-test:
@@ -43,11 +46,9 @@ jobs:
         cache: 'npm'
 
     - name: WHEN the project dependencies are installed
-      # /**
-      #  * WHY: --force handles peer dependency conflicts. 
-      #  * --omit=optional prevents installation of fsevents/macOS-only packages 
-      #  * on the Linux runner, avoiding EBADPLATFORM errors.
-      #  */
+      # WHY: --force handles peer dependency conflicts. 
+      # --omit=optional prevents installation of fsevents/macOS-only packages 
+      # on the Linux runner, avoiding EBADPLATFORM errors.
       run: npm install --force --omit=optional
 
     - name: AND the Playwright browser binaries are provisioned
@@ -55,19 +56,44 @@ jobs:
       run: npx playwright install --with-deps chromium
 
     - name: THEN the automated smoke test suite is executed
-      # /**
-      #  * WHY: We prioritize manual input for APP_BASE_URL, falling back to 
-      #  * Repository Variables (vars.APP_BASE_URL) for automated runs.
-      #  */
+      # WHY: We prioritize manual input for APP_BASE_URL, falling back to 
+      # Repository Variables (vars.APP_BASE_URL) for automated runs.
+      # WHY: continue-on-error: true ensures that even if tests fail, we 
+      # proceed to report generation so the failures can be analyzed in Allure.
       run: npx playwright test --grep ${{ github.event.inputs.grep_tag || '@smoke' }} --project=chromium
+      continue-on-error: true
       env:
         APP_BASE_URL: ${{ github.event.inputs.environment_url || vars.APP_BASE_URL }}
 
-    - name: AND the test execution report is preserved as a build artifact
-      # /**
-      #  * WHY: Ensures the report is uploaded even if tests fail, 
-      #  * which is critical for debugging regressions in the CI pipeline.
-      #  */
+    - name: AND the Allure report is generated from raw results
+      # WHY: We use 'npx' to execute the allure-commandline tool included in 
+      # the project's devDependencies to transform JSON results into HTML.
+      if: always()
+      run: npx allure generate allure-results --clean -o allure-report
+
+    - name: AND the report is deployed to GitHub Pages for live viewing
+      # WHY: GitHub does not render HTML in artifacts. Deploying to GH Pages 
+      # provides an interactive, shareable dashboard for stakeholders.
+      # WHY: We use the run_number to maintain a historical record of test runs.
+      uses: peaceiris/actions-gh-pages@v3
+      if: always()
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./allure-report
+        destination_dir: smoke-reports/${{ github.run_number }}
+
+    - name: THEN the interactive report link is published to the Job Summary
+      # WHY: This provides an immediate, clickable entry point for team members 
+      # to view detailed failures directly from the GitHub Actions UI.
+      if: always()
+      run: |
+        echo "### 📊 Allure Smoke Report" >> $GITHUB_STEP_SUMMARY
+        echo "The interactive Allure report for run #${{ github.run_number }} is available here:" >> $GITHUB_STEP_SUMMARY
+        echo "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/smoke-reports/${{ github.run_number }}/" >> $GITHUB_STEP_SUMMARY
+
+    - name: AND the standard Playwright HTML report is preserved as a build artifact
+      # WHY: Ensures the standard report is uploaded even if tests fail, 
+      # providing a fallback debugging source for 7 days.
       uses: actions/upload-artifact@v4
       if: always()
       with:

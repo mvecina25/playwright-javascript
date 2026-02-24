@@ -71,7 +71,11 @@ export default defineConfig({
    */
   reporter: [
     ['html', { open: 'never' }],  // 'never' prevents CI from hanging
-    ['list']                      // Useful for seeing progress in CI logs
+    ['list'],                    // Useful for seeing progress in CI logs
+    ['allure-playwright', { 
+      outputFolder: 'allure-results',
+      detail: true 
+    }]
   ],
 
   // Global timeout for the entire test execution

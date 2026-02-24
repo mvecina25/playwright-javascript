@@ -3,10 +3,10 @@ name: 🌙 Nightly Regression
 on:
   schedule:
     # /**
-    #  * WHY: We schedule the suite for 14:00 UTC (9:00 AM EST) to ensure the 
+    #  * WHY: We schedule the suite for 13:00 UTC (8:00 AM EST / 9:00 AM EDT) to ensure the 
     #  * team has fresh results at the start of the workday.
     #  */
-    - cron: '0 14 * * *'
+    - cron: '0 13 * * *'
     
   workflow_dispatch:
     # /**
@@ -22,6 +22,12 @@ on:
         description: 'Playwright Grep Tag'
         required: false
         default: '@nightly'
+
+# WHY: Specific permissions are required for the bot to write the report to the gh-pages branch.
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   nightly-test:
@@ -56,10 +62,36 @@ jobs:
     #   /**
     #    * WHY: We use the grep tag to filter the nightly subset. 
     #    * APP_BASE_URL prioritizes manual input before falling back to a Repo Variable.
+    #    * WHY: continue-on-error: true is critical; if tests fail, we still need to generate 
+    #    * the report so the failures can be analyzed in Allure.
     #    */
       run: npx playwright test --grep ${{ github.event.inputs.grep_tag || '@nightly' }} --project=chromium
+      continue-on-error: true
       env:
         APP_BASE_URL: ${{ github.event.inputs.environment_url || vars.APP_BASE_URL }}
+
+    - name: AND the Allure report is generated from raw results
+      # WHY: We use 'npx' to call the allure-commandline tool defined in your package.json devDependencies.
+      if: always()
+      run: npx allure generate allure-results --clean -o allure-report
+
+    - name: AND the report is deployed to GitHub Pages for live viewing
+      # WHY: GitHub does not render HTML in artifacts. Deploying to GH Pages provides a shareable dashboard.
+      # We use the run_number to keep a history of nightly reports.
+      uses: peaceiris/actions-gh-pages@v3
+      if: always()
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./allure-report
+        destination_dir: nightly-reports/${{ github.run_number }}
+
+    - name: THEN the interactive report link is published to the Job Summary
+      # WHY: This provides an immediate, clickable entry point for stakeholders in the GitHub UI.
+      if: always()
+      run: |
+        echo "### 📊 Allure Nightly Report" >> $GITHUB_STEP_SUMMARY
+        echo "View the interactive results for run #${{ github.run_number }} here:" >> $GITHUB_STEP_SUMMARY
+        echo "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/nightly-reports/${{ github.run_number }}/" >> $GITHUB_STEP_SUMMARY
 
     - name: AND the test execution report is preserved as a build artifact
     #   /**

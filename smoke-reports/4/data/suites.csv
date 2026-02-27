@@ -1,0 +1,5 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","77","TC-API-02: should validate user profile details against the contract schema","chromium","2026-02-27","passed","2026-02-27","API - User Banking Journey - Ledger Validation","api/journeys/user-journey-api.spec.js","",""
+"","47","TC-API-03: should successfully transfer funds between checking and savings accounts","chromium","2026-02-27","passed","2026-02-27","API - User Banking Journey - Ledger Validation","api/journeys/user-journey-api.spec.js","",""
+"","50","TC-API-04: should verify the transaction ledger entry matches the transfer amount","chromium","2026-02-27","passed","2026-02-27","API - User Banking Journey - Ledger Validation","api/journeys/user-journey-api.spec.js","",""
+"","1849","TC-API-01: should authenticate and capture a valid session ID","chromium","2026-02-27","passed","2026-02-27","API - User Banking Journey - Ledger Validation","api/journeys/user-journey-api.spec.js","",""

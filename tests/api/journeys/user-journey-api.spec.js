@@ -19,7 +19,7 @@ const PARABANK_ENDPOINTS = {
     userDetails: (user, pass) => `/parabank/services/bank/login/${user}/${pass}`,
 };
 
-test.describe.serial('API - User Banking Journey - Ledger Validation', { tag: ['@smoke', '@journey'] }, () => {
+test.describe.serial('API - User Banking Journey - Ledger Validation', { tag: ['@smoke', '@journey', '@api'] }, () => {
     let userContext;
     let sharedSessionId;
 

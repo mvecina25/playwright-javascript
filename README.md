@@ -151,3 +151,319 @@ root/
 ├── package.json
 ├── playwright.config.js                    # Playwright master config
 └── README.md
+```
+
+---
+
+## 🔧 Configuration
+
+### Playwright Configuration
+
+The `playwright.config.js` file establishes a predictable runtime environment across local and CI environments:
+
+| Setting            | Local                   | CI                |
+| ------------------ | ----------------------- | ----------------- |
+| Parallel execution | Enabled (fullyParallel)      | Enabled (fullyParallel)   |
+| Workers            | Auto (All available cores)   | 1 (Resource Management)   |
+| Retries            | 0                            | 2 (Flakiness Mitigation)  |
+| Headless Mode      | True                         | True                      |
+| Reporter           | List, HTML, Allure           | List, HTML, Allure        |
+| Traces             | retain-on-failure            | retain-on-failure         |
+| Screenshots        | only-on-failure              | only-on-failure           |
+| Videos             | Retain on failure            | Retain on failure         |
+
+---
+
+## 🌍 Multi-Environment Management
+
+This framework supports seamless switching between different environments (Development, Staging, Production) using dynamic `.env` loading.
+
+### Project Structure Setup
+
+1. **Create an `env` folder** in your project root:
+   ```bash
+   mkdir env
+   ```
+2. **Create your environment files** inside that folder:
+- env/.env.dev (Default)
+- env/.env.staging
+- env/.env.prod
+
+3. **Add the variables** to each file. For example, in env/.env.staging:
+```Ini
+APP_BASE_URL=https://parabank.parasoft.com
+```
+
+### Switching Environments
+
+```bash
+# Default (dev)
+npm test
+
+# Staging environment
+ENVIRONMENT=staging npm test
+
+# Production environment
+ENVIRONMENT=prod npm test
+```
+
+## 🚀 Running Tests
+
+### Basic Commands
+
+```bash
+# Run all tests
+npm test
+
+# Chromium (Chrome/Edge)
+npm run test:chromium
+
+# Firefox
+npm run test:firefox
+
+# Webkit (Safari)
+npm run test:webkit
+
+# UI Mode - Opens the interactive Playwright Test Runner (Chromium)
+npm run test:ui
+
+# Headed Mode - Runs tests with a visible browser window (Chromium)
+npm run test:headed
+
+# Debug Mode - Opens the Playwright Inspector for step-by-step execution (Chromium)
+npm run test:debug
+```
+
+### Test Tags
+
+Tests are tagged for selective execution:
+
+```bash
+# Run Smoke tests only (Critical path validation) (Chromium)
+npm run test:smoke
+
+# Run Regression suite (Full feature validation) (Chromium)
+npm run test:regression
+
+# Run End-to-End User Journeys (Chromium)
+npm run test:journey
+
+# Run API-specific tests
+npm run test:api
+
+# Run E2E-specific tests (Chromium)
+npm run test:e2e
+```
+
+### CI Mode
+Executes tests with a single worker, optimized for CI environments.
+
+```bash
+npm run test:ci
+```
+
+### Allure Reporting
+The framework integrates Allure for comprehensive, interactive HTML repo/rts.
+
+| Task | Command |
+| ------------------ | ----------------------- | 
+| Clean Results	| npm run allure:clean
+| Generate Report	| npm run allure:generate
+| Open Report	| npm run allure:open
+| Run & Report (All)	| npm run allure
+| Run & Report (Smoke)	| npm run smoke
+
+## 📦 Dependencies & Tools
+
+### Core Framework
+- Playwright (^1.52.0): The core automation engine.
+- Zod (^4.3.6): TypeScript-first schema declaration and validation for API contract testing.
+
+### Development Utilities
+- Faker (^9.8.0): Generates high-quality, randomized test data for user identities and addresses.
+- Dotenv (^17.2.4): Manages environment-specific variables.
+- Allure Playwright: Adapter for generating interactive test reports.
+
+## Writing Tests
+
+### Test File Structure
+Always import test and expect from the unified fixture hub in indexFixtures.js. This ensures all Page Objects and custom logic are automatically injected and ready for use.
+
+```javascript
+import { test, expect } from '../../../fixtures/indexFixtures.js';
+
+test.describe('Feature Module Tests @functional', () => {
+    
+    test.beforeEach(async ({ basePage }) => {
+        // Navigate to the module entry point before every test
+        await basePage.navigateTo('/parabank/index.htm');
+    });
+
+    test('should perform a critical business action', { tag: '@smoke' }, async ({ loginPage, homePage }) => {
+        await test.step('GIVEN user is on the login page', async () => {
+            await expect(loginPage.usernameInput).toBeVisible();
+        });
+
+        await test.step('WHEN user logs in with valid credentials', async () => {
+            await loginPage.login('john_doe', 'password123');
+        });
+
+        await test.step('THEN the user should be redirected to the account overview', async () => {
+            // Web-first assertions provide automatic retries
+            await expect(homePage.logoutLink).toBeVisible();
+            await expect(homePage.welcomeMessage).toContainText('Welcome');
+        });
+    });
+});
+```
+
+### Using Test Steps
+Use test.step() to wrap your logic. This creates a clear "Given/When/Then" structure in your Allure reports and the Playwright HTML reporter, making it easier for stakeholders to understand failure points.
+
+```javascript
+test('descriptive test name', async ({ registerPage }) => {
+    await test.step('GIVEN user provides unique registration details', async () => {
+        // Logic here
+    });
+
+    await test.step('WHEN the registration form is submitted', async () => {
+        // Action here
+    });
+
+    await test.step('THEN the system should create the new account', async () => {
+        // Assertion here
+    });
+});
+```
+
+### Data-Driven Tests
+For scenarios like form validation or multiple login failures, use standard JavaScript loops to generate individual test cases dynamically.
+
+```javascript
+const invalidCredentials = [
+    { user: 'wrong_user', pass: 'password', error: 'The username and password could not be verified.' },
+    { user: 'john', pass: 'wrong_pass', error: 'The username and password could not be verified.' }
+];
+
+for (const data of invalidCredentials) {
+    test(`should show error for user: ${data.user}`, { tag: '@regression' }, async ({ loginPage }) => {
+        await loginPage.login(data.user, data.pass);
+        await expect(loginPage.errorMessage).toHaveText(data.error);
+    });
+}
+```
+
+## Page Object Model
+
+### Creating Page Objects
+Page objects encapsulate locators and actions for a specific page or component. By using the Page Object Model (POM), we ensure that if the UI changes, we only need to update the locator in one centralized place (DRY principle).
+
+```javascript
+/**
+ * Page Object Model for the Login module.
+ */
+export class LoginPage {
+    /**
+     * @param {import('@playwright/test').Page} page
+     */
+    constructor(page) {
+        this.page = page;
+    }
+
+    // ==================== Locators ====================
+
+    /**
+     * The username input field.
+     */
+    get usernameInput() {
+        return this.page.locator('input[name="username"]');
+    }
+
+    /**
+     * The password input field.
+     */
+    get passwordInput() {
+        return this.page.locator('input[name="password"]');
+    }
+
+    /**
+     * The submit login button.
+     */
+    get loginButton() {
+        return this.page.locator('input[value="Log In"]');
+    }
+
+    /**
+     * The registration link.
+     * WHY: Using getByRole is preferred as it mimics user interaction
+     * and is less brittle than CSS selectors.
+     */
+    get registerLink() {
+        return this.page.getByRole('link', { name: 'Register' });
+    }
+
+    /**
+     * The error message container.
+     */
+    get errorMessage() {
+        return this.page.locator('.error');
+    }
+
+    // ==================== Actions ====================    
+
+    /**
+     * Executes the login sequence.
+     * @param {string} username 
+     * @param {string} password 
+     * @returns {Promise<void>}
+     */
+    async login(username, password) {
+        await this.usernameInput.fill(username);
+        await this.passwordInput.fill(password);
+        await this.loginButton.click();
+    }
+
+    /**
+     * Navigates to the Registration page.
+     * @returns {Promise<void>}
+     */
+    async clickRegisterLink() {
+        await this.registerLink.click();
+    }
+
+    /**
+     * Retrieves the text from the error message container.
+     * @returns {Promise<string>}
+     */
+    async getErrorMessageText() {
+        await this.errorMessage.waitFor({ state: 'visible' });
+        const text = await this.errorMessage.textContent();
+        return text ? text.trim() : '';
+    }
+}
+```
+
+### Page Object Guidelines
+
+1. **Locators as Getters**: Use get accessors for all locators to ensure they are evaluated lazily at the moment of interaction.
+2. **Semantic Locators**: Prioritize semantic locators in this order:
+    - page.getByRole() (Accessibility-based)
+    - page.getByText()
+    - page.getByLabel()
+    - page.locator() (CSS/XPath - use as a last resort)
+3. **Action Methods**: Methods should represent complete user flows (e.g., login) to keep test scripts declarative rather than imperative.
+4. **Wait Logic**: Encapsulate specific wait logic (like waitFor({ state: 'visible' })) inside the POM action methods to make tests more stable.
+
+### Registering Page Objects
+Add new page objects to fixtures/pom/pomFixtures.js to make them available in your tests via dependency injection:
+
+```javascript
+import { test as base } from '@playwright/test';
+import { LoginPage } from '../../pages/LoginPage';
+
+export const test = base.extend({
+    loginPage: async ({ page }, use) => {
+        await use(new LoginPage(page));
+    },
+});
+```

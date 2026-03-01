@@ -24,7 +24,7 @@ test.describe('Bills Payment - End to End Flow', () => {
 
     test(
         'TC-07: should pay a bill successfully using a newly created savings account',
-        { tag: ['@regression'] },
+        { tag: ['@regression', '@ui'] },
         async ({ userCreationFixture, savingsAccountCreationFixture, homePage, billPayPage }) => {
             
             // Data Setup: Mapping fixture data to the payment payload

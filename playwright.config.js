@@ -11,11 +11,23 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 /**
+ * STEP 1: Determine the execution environment.
+ * Default to 'dev' if no ENVIRONMENT variable is provided in the terminal.
+ */
+const ENV = process.env.ENVIRONMENT || 'dev';
+
+/**
  * WHY: Load environment variables early.
  * We use path.resolve to ensure the .env file is found regardless of where the 
  * test runner is invoked from, making the configuration more robust.
+ * 
+ * MODIFICATION: We now resolve the path dynamically based on the ENVIRONMENT variable.
+ * Files are expected to be in: /env/.env.dev, /env/.env.staging, etc.
  */
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+const envPath = path.resolve(process.cwd(), 'env', `.env.${ENV}`);
+dotenv.config({ path: envPath });
+
+console.log(`🚀 Running tests in [${ENV.toUpperCase()}] mode using: ${envPath}`);
 
 /**
  * Validation: Ensure critical environment variables are present.
@@ -23,7 +35,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
  * against an 'undefined' URL, saving compute time and debugging effort.
  */
 if (!process.env.APP_BASE_URL) {
-  console.warn('WARNING: APP_BASE_URL is not defined in environment variables. Falling back to localhost.');
+  console.warn(`WARNING: APP_BASE_URL is not defined in ${envPath}. Falling back to localhost.`);
 }
 
 /**
@@ -106,7 +118,7 @@ export default defineConfig({
      */
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    video: 'retain-on-failure',
 
     /**
    * WHY: Custom launch arguments for consistent viewport behavior.

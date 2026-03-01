@@ -27,7 +27,7 @@ test.describe('Transfer Funds - Ledger Validation', () => {
 
     test(
         'TC-06: should transfer funds from savings to checking and update account balances',
-        { tag: ['@regression'] },
+        { tag: ['@regression', '@ui'] },
         async ({ 
             userCreationFixture, 
             savingsAccountCreationFixture, 

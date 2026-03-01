@@ -45,7 +45,7 @@ test.describe('Complete User Banking Journey - End to End Flow', () => {
 
     test(
         'should complete a full user onboarding and financial transaction journey',
-        { tag: ['@nightly', '@journey'] },
+        { tag: ['@nightly', '@journey', '@ui'] },
         async ({
             basePage,
             loginPage,

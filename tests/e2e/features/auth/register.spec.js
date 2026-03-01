@@ -21,7 +21,7 @@ test.describe('Authentication - Registration Flow', () => {
 
     test(
         'TC-01a: should register a new user successfully',
-        { tag: ['@regression'] },
+        { tag: ['@regression', '@ui'] },
         async ({ loginPage, registerPage }) => {
             const newUserData = generateRandomUser();
 
@@ -67,7 +67,7 @@ test.describe('Authentication - Registration Flow', () => {
 
     test(
         'TC-01b: should prevent registration when using an existing username',
-        { tag: ['@regression'] },
+        { tag: ['@regression', '@ui'] },
         async ({ loginPage, registerPage, homePage }) => {
             const existingUserData = generateRandomUser();
 

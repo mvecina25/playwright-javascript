@@ -24,7 +24,7 @@ test.describe.serial('Authentication - Login Flow', () => {
 
     test(
         'TC-02a: should allow a newly registered user to authenticate successfully',
-        { tag: ['@regression'] },
+        { tag: ['@regression', '@ui'] },
         async ({ loginPage, registerPage, homePage }) => {
             const newIdentity = generateRandomUser();
 
@@ -73,7 +73,7 @@ test.describe.serial('Authentication - Login Flow', () => {
 
     test(
         'TC-02b: should display an error message when logging in with invalid credentials',
-        { tag: ['@regression'] },
+        { tag: ['@regression', '@ui'] },
         async ({ loginPage }) => {
             await test.step('WHEN the user attempts to log in with an unrecognized account', async () => {
                 await loginPage.login('non_existent_user_123', 'invalid_password_456');
@@ -92,7 +92,7 @@ test.describe.serial('Authentication - Login Flow', () => {
 
     test(
         'TC-03: should allow navigation to all core banking modules via the sidebar menu',
-        { tag: ['@regression'] },
+        { tag: ['@regression', '@ui'] },
         async ({ loginPage, homePage }) => {
             
             await test.step('GIVEN an authenticated user session is active', async () => {

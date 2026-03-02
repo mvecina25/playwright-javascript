@@ -49,15 +49,15 @@ A robust, enterprise-grade test automation framework built with **Playwright (Ja
 
 ## 🛠 Tech Stack
 
-| Tool/Library | Purpose |
-|--------------|---------|
-| [Playwright](https://playwright.dev/) | Browser automation, API testing, network interception |
-| [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) | Primary programming language (ES6+ modules) |
-| [Allure Report](https://qameta.io/allure-report/) | Test reporting with history, graphs, and trends |
-| [Zod](https://zod.dev/) | Runtime schema validation for API contract testing |
-| [Faker](https://fakerjs.dev/) | Realistic, locale-aware test data generation |
-| [Dotenv](https://github.com/motdotla/dotenv) | Environment variable management across environments |
-| [GitHub Actions](https://github.com/features/actions) | CI/CD pipelines with matrix testing and artifact management |
+| Tool/Library                                                          | Purpose                                                     |
+| --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| [Playwright](https://playwright.dev/)                                 | Browser automation, API testing, network interception       |
+| [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) | Primary programming language (ES6+ modules)                 |
+| [Allure Report](https://qameta.io/allure-report/)                     | Test reporting with history, graphs, and trends             |
+| [Zod](https://zod.dev/)                                               | Runtime schema validation for API contract testing          |
+| [Faker](https://fakerjs.dev/)                                         | Realistic, locale-aware test data generation                |
+| [Dotenv](https://github.com/motdotla/dotenv)                          | Environment variable management across environments         |
+| [GitHub Actions](https://github.com/features/actions)                 | CI/CD pipelines with matrix testing and artifact management |
 
 ---
 
@@ -74,25 +74,35 @@ A robust, enterprise-grade test automation framework built with **Playwright (Ja
 ## 🔧 Installation
 
 1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-org/playwright-javascript.git
-   cd playwright-javascript
+
+    ```bash
+    git clone https://github.com/your-org/playwright-javascript.git
+    cd playwright-javascript
+
+    ```
 
 2. **Install dependencies**
-   ```bash
-   npm install --force --omit=optional
+
+    ```bash
+    npm install --force --omit=optional
+
+    ```
 
 3. **Install Playwright browsers**
-   ```bash
-   npx playwright install --with-deps chromium
+
+    ```bash
+    npx playwright install --with-deps chromium
+
+    ```
 
 4. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   Update APP_BASE_URL with your target environment (e.g., https://parabank.parasoft.com)
+    ```bash
+    cp .env.example .env
+    ```
+    Update APP_BASE_URL with your target environment (e.g., https://parabank.parasoft.com)
 
 ## Project Structure
+
 ```
 root/
 ├── .github/
@@ -161,16 +171,16 @@ root/
 
 The `playwright.config.js` file establishes a predictable runtime environment across local and CI environments:
 
-| Setting            | Local                   | CI                |
-| ------------------ | ----------------------- | ----------------- |
-| Parallel execution | Enabled (fullyParallel)      | Enabled (fullyParallel)   |
-| Workers            | Auto (All available cores)   | 1 (Resource Management)   |
-| Retries            | 0                            | 2 (Flakiness Mitigation)  |
-| Headless Mode      | True                         | True                      |
-| Reporter           | List, HTML, Allure           | List, HTML, Allure        |
-| Traces             | retain-on-failure            | retain-on-failure         |
-| Screenshots        | only-on-failure              | only-on-failure           |
-| Videos             | Retain on failure            | Retain on failure         |
+| Setting            | Local                      | CI                       |
+| ------------------ | -------------------------- | ------------------------ |
+| Parallel execution | Enabled (fullyParallel)    | Enabled (fullyParallel)  |
+| Workers            | Auto (All available cores) | 1 (Resource Management)  |
+| Retries            | 0                          | 2 (Flakiness Mitigation) |
+| Headless Mode      | True                       | True                     |
+| Reporter           | List, HTML, Allure         | List, HTML, Allure       |
+| Traces             | retain-on-failure          | retain-on-failure        |
+| Screenshots        | only-on-failure            | only-on-failure          |
+| Videos             | Retain on failure          | Retain on failure        |
 
 ---
 
@@ -181,15 +191,17 @@ This framework supports seamless switching between different environments (Devel
 ### Project Structure Setup
 
 1. **Create an `env` folder** in your project root:
-   ```bash
-   mkdir env
-   ```
+    ```bash
+    mkdir env
+    ```
 2. **Create your environment files** inside that folder:
+
 - env/.env.dev (Default)
 - env/.env.staging
 - env/.env.prod
 
 3. **Add the variables** to each file. For example, in env/.env.staging:
+
 ```Ini
 APP_BASE_URL=https://parabank.parasoft.com
 ```
@@ -256,6 +268,7 @@ npm run test:e2e
 ```
 
 ### CI Mode
+
 Executes tests with a single worker, optimized for CI environments.
 
 ```bash
@@ -263,23 +276,26 @@ npm run test:ci
 ```
 
 ### Allure Reporting
+
 The framework integrates Allure for comprehensive, interactive HTML repo/rts.
 
-| Task | Command |
-| ------------------ | ----------------------- | 
-| Clean Results	| npm run allure:clean
-| Generate Report	| npm run allure:generate
-| Open Report	| npm run allure:open
-| Run & Report (All)	| npm run allure
-| Run & Report (Smoke)	| npm run smoke
+| Task                 | Command                 |
+| -------------------- | ----------------------- |
+| Clean Results        | npm run allure:clean    |
+| Generate Report      | npm run allure:generate |
+| Open Report          | npm run allure:open     |
+| Run & Report (All)   | npm run allure          |
+| Run & Report (Smoke) | npm run smoke           |
 
 ## 📦 Dependencies & Tools
 
 ### Core Framework
+
 - Playwright (^1.52.0): The core automation engine.
 - Zod (^4.3.6): TypeScript-first schema declaration and validation for API contract testing.
 
 ### Development Utilities
+
 - Faker (^9.8.0): Generates high-quality, randomized test data for user identities and addresses.
 - Dotenv (^17.2.4): Manages environment-specific variables.
 - Allure Playwright: Adapter for generating interactive test reports.
@@ -287,37 +303,42 @@ The framework integrates Allure for comprehensive, interactive HTML repo/rts.
 ## Writing Tests
 
 ### Test File Structure
+
 Always import test and expect from the unified fixture hub in indexFixtures.js. This ensures all Page Objects and custom logic are automatically injected and ready for use.
 
 ```javascript
 import { test, expect } from '../../../fixtures/indexFixtures.js';
 
 test.describe('Feature Module Tests @functional', () => {
-    
     test.beforeEach(async ({ basePage }) => {
         // Navigate to the module entry point before every test
         await basePage.navigateTo('/parabank/index.htm');
     });
 
-    test('should perform a critical business action', { tag: '@smoke' }, async ({ loginPage, homePage }) => {
-        await test.step('GIVEN user is on the login page', async () => {
-            await expect(loginPage.usernameInput).toBeVisible();
-        });
+    test(
+        'should perform a critical business action',
+        { tag: '@smoke' },
+        async ({ loginPage, homePage }) => {
+            await test.step('GIVEN user is on the login page', async () => {
+                await expect(loginPage.usernameInput).toBeVisible();
+            });
 
-        await test.step('WHEN user logs in with valid credentials', async () => {
-            await loginPage.login('john_doe', 'password123');
-        });
+            await test.step('WHEN user logs in with valid credentials', async () => {
+                await loginPage.login('john_doe', 'password123');
+            });
 
-        await test.step('THEN the user should be redirected to the account overview', async () => {
-            // Web-first assertions provide automatic retries
-            await expect(homePage.logoutLink).toBeVisible();
-            await expect(homePage.welcomeMessage).toContainText('Welcome');
-        });
-    });
+            await test.step('THEN the user should be redirected to the account overview', async () => {
+                // Web-first assertions provide automatic retries
+                await expect(homePage.logoutLink).toBeVisible();
+                await expect(homePage.welcomeMessage).toContainText('Welcome');
+            });
+        },
+    );
 });
 ```
 
 ### Using Test Steps
+
 Use test.step() to wrap your logic. This creates a clear "Given/When/Then" structure in your Allure reports and the Playwright HTML reporter, making it easier for stakeholders to understand failure points.
 
 ```javascript
@@ -337,25 +358,35 @@ test('descriptive test name', async ({ registerPage }) => {
 ```
 
 ### Data-Driven Tests
+
 For scenarios like form validation or multiple login failures, use standard JavaScript loops to generate individual test cases dynamically.
 
 ```javascript
 const invalidCredentials = [
-    { user: 'wrong_user', pass: 'password', error: 'The username and password could not be verified.' },
-    { user: 'john', pass: 'wrong_pass', error: 'The username and password could not be verified.' }
+    {
+        user: 'wrong_user',
+        pass: 'password',
+        error: 'The username and password could not be verified.',
+    },
+    { user: 'john', pass: 'wrong_pass', error: 'The username and password could not be verified.' },
 ];
 
 for (const data of invalidCredentials) {
-    test(`should show error for user: ${data.user}`, { tag: '@regression' }, async ({ loginPage }) => {
-        await loginPage.login(data.user, data.pass);
-        await expect(loginPage.errorMessage).toHaveText(data.error);
-    });
+    test(
+        `should show error for user: ${data.user}`,
+        { tag: '@regression' },
+        async ({ loginPage }) => {
+            await loginPage.login(data.user, data.pass);
+            await expect(loginPage.errorMessage).toHaveText(data.error);
+        },
+    );
 }
 ```
 
 ## Page Object Model
 
 ### Creating Page Objects
+
 Page objects encapsulate locators and actions for a specific page or component. By using the Page Object Model (POM), we ensure that if the UI changes, we only need to update the locator in one centralized place (DRY principle).
 
 ```javascript
@@ -409,12 +440,12 @@ export class LoginPage {
         return this.page.locator('.error');
     }
 
-    // ==================== Actions ====================    
+    // ==================== Actions ====================
 
     /**
      * Executes the login sequence.
-     * @param {string} username 
-     * @param {string} password 
+     * @param {string} username
+     * @param {string} password
      * @returns {Promise<void>}
      */
     async login(username, password) {
@@ -455,6 +486,7 @@ export class LoginPage {
 4. **Wait Logic**: Encapsulate specific wait logic (like waitFor({ state: 'visible' })) inside the POM action methods to make tests more stable.
 
 ### Registering Page Objects
+
 Add new page objects to fixtures/pom/pomFixtures.js to make them available in your tests via dependency injection:
 
 ```javascript
@@ -464,6 +496,127 @@ import { LoginPage } from '../../pages/LoginPage';
 export const test = base.extend({
     loginPage: async ({ page }, use) => {
         await use(new LoginPage(page));
+    },
+});
+```
+
+## API Testing
+
+### Making API Requests
+
+The framework provides an apiRequest fixture that abstracts Playwright's low-level request logic. It automatically handles session management, header orchestration, and intelligent response parsing (JSON or Plain Text).
+
+Always import test from the unified fixture hub:
+
+```javascript
+import { test, expect } from '../../../fixtures/indexFixtures.js';
+import { UserResponseSchema } from '../../../fixtures/api/schemas/userSchema';
+
+test('should retrieve user profile details via API', async ({ apiRequest }) => {
+    const response = await apiRequest({
+        method: 'GET',
+        url: `/parabank/services/bank/login/john/demo`,
+        baseUrl: process.env.APP_BASE_URL,
+        headers: {
+            Accept: 'application/json',
+            Cookie: 'JSESSIONID=12345ABCDE', // Session captured from login setup
+        },
+    });
+
+    expect(response.status).toBe(200);
+
+    // Contract Validation
+    const validation = UserResponseSchema.safeParse(response.body);
+    expect(validation.success, 'API response does not match schema').toBe(true);
+});
+```
+
+### API Request Options
+
+| Option     | Type    | Description                                                                    |
+| ---------- | ------- | ------------------------------------------------------------------------------ |
+| method     | string  | HTTP verb: 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'.                            |
+| url        | string  | The endpoint path.                                                             |
+| baseUrl    | string  | The base URL (e.g., process.env.APP_BASE_URL).                                 |
+| body       | Object  | The request payload (JSON or Form-Data).                                       |
+| headers    | Object  | Header key-value pairs (e.g., {'Accept': 'application/json'}).                 |
+| isFormData | boolean | If true, body is sent as application/x-www-form-urlencoded. Defaults to false. |
+
+### Schema Validation with Zod
+
+We use Zod to enforce strict data contracts. This ensures that the backend responses conform to the expected structure, catching regressions in data types or missing fields immediately at the API boundary.
+
+Define schemas in fixtures/api/schemas/:
+
+```javascript
+import { z } from 'zod';
+
+// Example: Transaction Schema
+export const TransactionSchema = z.object({
+    id: z.number(),
+    accountId: z.number(),
+    type: z.enum(['Credit', 'Debit']),
+    date: z.union([z.string(), z.number()]),
+    amount: z.number(),
+    description: z.string(),
+});
+
+export const TransactionListSchema = z.array(TransactionSchema);
+```
+
+Use the schemas in your tests to perform contract validation:
+
+```javascript
+const { body } = await apiRequest({ ... });
+
+// safeParse returns an object with success (boolean) and data/error
+const validation = TransactionListSchema.safeParse(body);
+
+if (!validation.success) {
+    console.error('Schema Mismatch:', validation.error.format());
+}
+expect(validation.success).toBe(true);
+```
+
+## Session & Authentication Management
+
+**How It Works**
+
+Parabank utilizes stateful sessions via a JSESSIONID cookie. The framework manages this session lifecycle across API tests:
+
+1. Authentication Step: Perform a POST request to the login endpoint using isFormData: true.
+2. Cookie Capture: Use the extractCookie utility to isolate the JSESSIONID from the response headers.
+3. Stateful Requests: Pass the captured cookie in the headers object for all subsequent REST calls.
+
+**Capturing the Session**
+
+The extractCookie helper is designed to handle CI environments where Playwright might merge multiple set-cookie headers into a single string.
+
+```javascript
+import { extractCookie } from '../../../utils/api-helper.js';
+
+// Inside a test
+const response = await apiRequest({
+    method: 'POST',
+    url: '/parabank/login.htm',
+    isFormData: true,
+    body: { username: 'myUser', password: 'myPassword' },
+});
+
+const sessionId = extractCookie(response.headers, 'JSESSIONID');
+```
+
+**Using the Session in API Tests**
+
+Once the session ID is captured, pass it in the headers object for any protected REST endpoints:
+
+```javascript
+const response = await apiRequest({
+    method: 'GET',
+    url: '/parabank/services/bank/accounts/12345/transactions',
+    headers: {
+        Cookie: sessionId,
+        Accept: 'application/json',
     },
 });
 ```

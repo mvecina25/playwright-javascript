@@ -1,9 +1,9 @@
 /**
  * POM Fixtures Orchestration
- * 
+ *
  * WHY: This file extends the base Playwright test object to include all Page Object Models (POMs).
- * By using fixtures, we implement Dependency Injection, allowing tests to access page objects 
- * as arguments. This keeps tests clean, reduces boilerplate, and ensures that Page Objects 
+ * By using fixtures, we implement Dependency Injection, allowing tests to access page objects
+ * as arguments. This keeps tests clean, reduces boilerplate, and ensures that Page Objects
  * are instantiated only when needed (Lazy Loading).
  */
 
@@ -22,15 +22,14 @@ import { AccountActivityPage } from '../../pages/AccountActivityPage';
 
 /**
  * Extend the base test with POM fixtures.
- * 
- * WHY: This approach follows the Engineering Principle of "Don't Reinvent the Wheel" 
- * by leveraging Playwright's built-in fixture system to manage object lifecycles. 
+ *
+ * WHY: This approach follows the Engineering Principle of "Don't Reinvent the Wheel"
+ * by leveraging Playwright's built-in fixture system to manage object lifecycles.
  * Each fixture is scoped to a single test and is automatically cleaned up after execution.
  */
 export const test = base.extend({
-
     /**
-     * WHY: We provide access to the BasePage for common utilities like 
+     * WHY: We provide access to the BasePage for common utilities like
      * cross-module navigation or global health checks.
      */
     basePage: async ({ page }, use) => {
@@ -38,8 +37,8 @@ export const test = base.extend({
     },
 
     /**
-     * WHY: Dedicated fixtures for each module (Login, Register, etc.) ensure 
-     * that tests follow the Single Responsibility Principle, only pulling in 
+     * WHY: Dedicated fixtures for each module (Login, Register, etc.) ensure
+     * that tests follow the Single Responsibility Principle, only pulling in
      * the specific page objects required for the scenario.
      */
     loginPage: async ({ page }, use) => {

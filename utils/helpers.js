@@ -15,7 +15,6 @@ import path from 'path';
 // Path where user credentials are stored
 const filePath = path.resolve('./utils/credentials.json');
 
-
 /**
  * ========================================
  * USERNAME GENERATOR
@@ -29,10 +28,9 @@ const filePath = path.resolve('./utils/credentials.json');
  * - Appends timestamp for uniqueness
  */
 export function generateRandomUsername() {
-
     // Create base username from faker
     // const baseUsername =
-        // faker.internet.username().replace(/[^a-zA-Z0-9]/g, '');
+    // faker.internet.username().replace(/[^a-zA-Z0-9]/g, '');
 
     // Add timestamp to guarantee uniqueness
     // return `${baseUsername}_${Date.now()}`;
@@ -54,11 +52,10 @@ export function generateRandomUsername() {
  * - Always starts with P@$$
  */
 export function generateRandomPassword() {
-
     return faker.internet.password({
-        length: 10,          // Total number of characters
-        memorable: false,    // Forces complex password
-        prefix: 'P@$$'       // Adds special characters at start
+        length: 10, // Total number of characters
+        memorable: false, // Forces complex password
+        prefix: 'P@$$', // Adds special characters at start
     });
 }
 
@@ -73,7 +70,6 @@ export function generateRandomPassword() {
  * Used for registration and login tests
  */
 export function generateRandomUser() {
-
     // Personal details
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
@@ -86,7 +82,7 @@ export function generateRandomUser() {
 
     // Contact information
     const phoneNumber = faker.phone.number('##########'); // Always 10 digits
-    const ssn = faker.string.numeric(9);                  // 9-digit numeric string
+    const ssn = faker.string.numeric(9); // 9-digit numeric string
 
     // Login credentials
     const username = generateRandomUsername();
@@ -113,7 +109,7 @@ export function generateRandomUser() {
         password,
 
         // Confirm password mirrors password
-        confirmPassword: password
+        confirmPassword: password,
     };
 }
 
@@ -139,15 +135,13 @@ export function saveCredentials(
     phoneNumber,
     ssn,
     checkingAccountId,
-    savingsAccountId
+    savingsAccountId,
 ) {
-
     // Local container for file data
     let data = [];
 
     // Check if credentials file already exists
     if (fs.existsSync(filePath)) {
-
         // Read file and convert JSON string into object
         data = JSON.parse(fs.readFileSync(filePath));
     }
@@ -168,7 +162,7 @@ export function saveCredentials(
         savingsAccountId,
 
         // Timestamp when record was created
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
     });
 
     // Write updated array back to file in formatted JSON
@@ -185,7 +179,6 @@ export function saveCredentials(
  * Returns the last saved user from credentials.json
  */
 export function getLatestCredentials() {
-
     // Throw clear error if file does not exist
     if (!fs.existsSync(filePath)) {
         throw new Error('credentials.json does not exist');

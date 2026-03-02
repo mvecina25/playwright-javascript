@@ -6,29 +6,28 @@ import { test, expect } from '../../../fixtures/indexFixtures.js';
 import { generateRandomUser, saveCredentials } from '../../../utils/helpers';
 
 /**
- * WHY: Centralizing values prevents "magic numbers" and ensures that if the 
+ * WHY: Centralizing values prevents "magic numbers" and ensures that if the
  * test data requirements change, we update in one place.
  */
 const INITIAL_ACCOUNT_BALANCE = '$100.00';
-const TRANSACTION_AMOUNT = '1.00'; 
+const TRANSACTION_AMOUNT = '1.00';
 const LOGIN_URL = '/parabank/index.htm';
 
 test.describe('Complete User Banking Journey - End to End Flow', () => {
-
-    let userProfile;           
-    let savingsAccountId;   
-    let checkingAccountId;  
+    let userProfile;
+    let savingsAccountId;
+    let checkingAccountId;
 
     /**
      * Helper: Sanitizes currency strings and converts them to floats.
-     * WHY: Playwright retrieves balances as strings (e.g., "$100.00"). 
+     * WHY: Playwright retrieves balances as strings (e.g., "$100.00").
      * Numerical values are required for mathematical delta-assertions.
      */
     const parseCurrency = (value) => parseFloat(value.replace(/[$,]/g, ''));
 
     test.beforeAll(async () => {
         /**
-         * WHY: Generating the user identity once per suite ensures all 
+         * WHY: Generating the user identity once per suite ensures all
          * serial steps act upon the same persistent record in the database.
          */
         userProfile = generateRandomUser();
@@ -36,7 +35,7 @@ test.describe('Complete User Banking Journey - End to End Flow', () => {
 
     test.beforeEach(async ({ basePage, loginPage }) => {
         /**
-         * WHY: Navigating to the entry page before every test ensures a clean 
+         * WHY: Navigating to the entry page before every test ensures a clean
          * browser state and confirms system availability.
          */
         await basePage.navigateTo(LOGIN_URL);
@@ -55,14 +54,13 @@ test.describe('Complete User Banking Journey - End to End Flow', () => {
             accountsOverviewPage,
             transferFundsPage,
             accountActivityPage,
-            billPayPage
+            billPayPage,
         }) => {
-
             await test.step('GIVEN the user registers a new account identity', async () => {
                 await loginPage.clickRegisterLink();
 
                 /**
-                 * WHY: Parabank occasionally experiences database lag (eventual consistency). 
+                 * WHY: Parabank occasionally experiences database lag (eventual consistency).
                  * toPass() retries the form submission if the welcome message isn't rendered immediately.
                  */
                 await expect(async () => {
@@ -71,42 +69,63 @@ test.describe('Complete User Banking Journey - End to End Flow', () => {
                     await expect(registerPage.welcomeMessage).toBeVisible({ timeout: 1000 });
                 }).toPass({
                     intervals: [1000, 2000],
-                    timeout: 10000
+                    timeout: 10000,
                 });
 
-                await expect(registerPage.welcomeMessage).toHaveText(`Welcome ${userProfile.username}`);
+                await expect(registerPage.welcomeMessage).toHaveText(
+                    `Welcome ${userProfile.username}`,
+                );
             });
 
             await test.step('AND the user logs in to discover their default checking account', async () => {
-                /** 
-                 * WHY: We explicitly logout to destroy the registration session. 
-                 * This verifies that the actual authentication service works for the new record.
+                /**
+                 * WHY: We call the POM state-guard method. This replaces the 'if'
+                 * statement that was previously in the test, satisfying ESLint.
                  */
-                if (await homePage.isUserLoggedIn()) {
-                    await homePage.clickLogout();
-                }
+                await homePage.ensureLoggedOut();
 
                 await loginPage.login(userProfile.username, userProfile.password);
-                
+
                 // Capture the system-generated checking account for funding future transactions
                 checkingAccountId = await homePage.getFirstAccountId();
                 userProfile.checkingAccountId = checkingAccountId;
 
-                expect(checkingAccountId, 'Default checking account should be generated').not.toBeNull();
+                expect(
+                    checkingAccountId,
+                    'Default checking account should be generated',
+                ).not.toBeNull();
             });
 
             await test.step('THEN the global sidebar navigation should be functional and verified', async () => {
                 const navLinks = [
-                    { name: 'Open New Account', expectedTitle: 'Open New Account', urlFragment: 'openaccount.htm' },
-                    { name: 'Accounts Overview', expectedTitle: 'Accounts Overview', urlFragment: 'overview.htm' },
-                    { name: 'Transfer Funds', expectedTitle: 'Transfer Funds', urlFragment: 'transfer.htm' },
-                    { name: 'Bill Pay', expectedTitle: 'Bill Payment Service', urlFragment: 'billpay.htm' }
+                    {
+                        name: 'Open New Account',
+                        expectedTitle: 'Open New Account',
+                        urlFragment: 'openaccount.htm',
+                    },
+                    {
+                        name: 'Accounts Overview',
+                        expectedTitle: 'Accounts Overview',
+                        urlFragment: 'overview.htm',
+                    },
+                    {
+                        name: 'Transfer Funds',
+                        expectedTitle: 'Transfer Funds',
+                        urlFragment: 'transfer.htm',
+                    },
+                    {
+                        name: 'Bill Pay',
+                        expectedTitle: 'Bill Payment Service',
+                        urlFragment: 'billpay.htm',
+                    },
                 ];
 
                 for (const link of navLinks) {
                     await homePage.navigateViaLeftMenu(link.name);
                     await expect(homePage.page).toHaveURL(new RegExp(link.urlFragment));
-                    await expect(homePage.page.getByRole('heading', { name: link.expectedTitle })).toBeVisible();
+                    await expect(
+                        homePage.page.getByRole('heading', { name: link.expectedTitle }),
+                    ).toBeVisible();
                 }
             });
 
@@ -116,21 +135,36 @@ test.describe('Complete User Banking Journey - End to End Flow', () => {
                 // Selecting 'SAVINGS' tests the application's account categorization logic
                 await openAccountPage.openAccount('SAVINGS', checkingAccountId);
 
-                await expect(openAccountPage.successMessage).toContainText('Congratulations, your account is now open.');
+                await expect(openAccountPage.successMessage).toContainText(
+                    'Congratulations, your account is now open.',
+                );
 
                 savingsAccountId = await openAccountPage.getNewAccountId();
                 userProfile.savingsAccountId = savingsAccountId;
 
                 /**
-                 * WHY: Persisting credentials acts as an audit trail for CI/CD, 
+                 * WHY: Persisting credentials acts as an audit trail for CI/CD,
                  * allowing manual reproduction of failures using the generated identity.
                  */
-                saveCredentials(userProfile.username, userProfile.password, userProfile.firstName, userProfile.lastName, userProfile.address.street, userProfile.address.city, userProfile.address.state, userProfile.address.zipCode, userProfile.phoneNumber, userProfile.ssn, checkingAccountId, savingsAccountId);
+                saveCredentials(
+                    userProfile.username,
+                    userProfile.password,
+                    userProfile.firstName,
+                    userProfile.lastName,
+                    userProfile.address.street,
+                    userProfile.address.city,
+                    userProfile.address.state,
+                    userProfile.address.zipCode,
+                    userProfile.phoneNumber,
+                    userProfile.ssn,
+                    checkingAccountId,
+                    savingsAccountId,
+                );
             });
 
             await test.step('THEN the savings account details should reflect the correct initial balance', async () => {
                 /**
-                 * WHY: Direct navigation verifies deep-linking capabilities 
+                 * WHY: Direct navigation verifies deep-linking capabilities
                  * and direct resource access independently of menu components.
                  */
                 await basePage.navigateTo(`/parabank/activity.htm?id=${savingsAccountId}`);
@@ -140,32 +174,47 @@ test.describe('Complete User Banking Journey - End to End Flow', () => {
                 expect(await accountActivityPage.getAccountTypeText()).toBe('SAVINGS');
             });
 
-            await test.step('WHEN the user transfers funds between checking and savings accounts', async () => {
+            // Scoping variables for ledger comparison between steps
+            let checkingBefore;
+            let savingsBefore;
+
+            await test.step('WHEN capturing initial account balances for comparison', async () => {
                 await homePage.navigateViaLeftMenu('Accounts Overview');
+                checkingBefore = parseCurrency(
+                    await accountsOverviewPage.getAccountBalance(checkingAccountId),
+                );
+                savingsBefore = parseCurrency(
+                    await accountsOverviewPage.getAccountBalance(savingsAccountId),
+                );
+            });
 
-                // Capture states before the transaction to calculate deltas
-                const checkingBefore = parseCurrency(await accountsOverviewPage.getAccountBalance(checkingAccountId));
-                const savingsBefore = parseCurrency(await accountsOverviewPage.getAccountBalance(savingsAccountId));
-
+            await test.step('AND the user transfers funds between checking and savings accounts', async () => {
                 await homePage.navigateViaLeftMenu('Transfer Funds');
-                await transferFundsPage.transferFunds(TRANSACTION_AMOUNT, savingsAccountId, checkingAccountId);
-
+                await transferFundsPage.transferFunds(
+                    TRANSACTION_AMOUNT,
+                    savingsAccountId,
+                    checkingAccountId,
+                );
                 await expect(transferFundsPage.successMessage).toBeVisible();
+            });
 
-                await test.step('THEN the ledger should update correctly with the transaction amounts', async () => {
-                    await homePage.navigateViaLeftMenu('Accounts Overview');
-                    const checkingAfter = parseCurrency(await accountsOverviewPage.getAccountBalance(checkingAccountId));
-                    const savingsAfter = parseCurrency(await accountsOverviewPage.getAccountBalance(savingsAccountId));
+            await test.step('THEN the ledger should update correctly with the transaction amounts', async () => {
+                await homePage.navigateViaLeftMenu('Accounts Overview');
+                const checkingAfter = parseCurrency(
+                    await accountsOverviewPage.getAccountBalance(checkingAccountId),
+                );
+                const savingsAfter = parseCurrency(
+                    await accountsOverviewPage.getAccountBalance(savingsAccountId),
+                );
 
-                    const amount = parseFloat(TRANSACTION_AMOUNT);
-                    
-                    /**
-                     * WHY: toBeCloseTo(X, 2) handles floating-point math issues inherent 
-                     * in JS currency calculations (e.g., handling cents accurately).
-                     */
-                    expect(checkingAfter).toBeCloseTo(checkingBefore + amount, 2);
-                    expect(savingsAfter).toBeCloseTo(savingsBefore - amount, 2);
-                });
+                const amount = parseFloat(TRANSACTION_AMOUNT);
+
+                /**
+                 * WHY: toBeCloseTo(X, 2) handles floating-point math issues inherent
+                 * in JS currency calculations (e.g., handling cents accurately).
+                 */
+                expect(checkingAfter).toBeCloseTo(checkingBefore + amount, 2);
+                expect(savingsAfter).toBeCloseTo(savingsBefore - amount, 2);
             });
 
             await test.step('WHEN the user completes a third-party bill payment', async () => {
@@ -181,19 +230,27 @@ test.describe('Complete User Banking Journey - End to End Flow', () => {
                 };
 
                 /**
-                 * WHY: Bill Pay involves complex AJAX POST requests. toPass() ensures 
+                 * WHY: Bill Pay involves complex AJAX POST requests. toPass() ensures
                  * the UI state has transitioned to 'Complete' before validating text.
                  */
                 await expect(async () => {
                     await billPayPage.fillBillPaymentForm(paymentData);
                     await billPayPage.submitPayment();
-                    await expect(billPayPage.page.getByRole('heading', { name: 'Bill Payment Complete' })).toBeVisible();
+                    await expect(
+                        billPayPage.page.getByRole('heading', { name: 'Bill Payment Complete' }),
+                    ).toBeVisible();
                 }).toPass();
             });
 
             await test.step('THEN the bill payment confirmation should be successfully displayed', async () => {
-                await expect(billPayPage.paymentSuccessDetails).toContainText(`amount of $${TRANSACTION_AMOUNT}`);
+                /**
+                 * WHY: This validation is moved out of the previous step to avoid
+                 * nesting test steps, satisfying 'playwright/no-nested-step'.
+                 */
+                await expect(billPayPage.paymentSuccessDetails).toContainText(
+                    `amount of $${TRANSACTION_AMOUNT}`,
+                );
             });
-        }
+        },
     );
 });

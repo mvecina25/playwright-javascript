@@ -11,12 +11,12 @@
 
 /**
  * Standardized network utility for making API requests.
- * 
- * WHY: This helper abstracts Playwright's low-level request methods into a 
- * single, consistent interface. It handles common tasks like header merging, 
- * URL construction, and intelligent response parsing, ensuring all API tests 
+ *
+ * WHY: This helper abstracts Playwright's low-level request methods into a
+ * single, consistent interface. It handles common tasks like header merging,
+ * URL construction, and intelligent response parsing, ensuring all API tests
  * follow the DRY (Don't Repeat Yourself) principle.
- * 
+ *
  * @param {ApiRequestParams} params
  * @returns {Promise<{ status: number, body: any, headers: Object }>}
  */
@@ -30,20 +30,20 @@ export async function apiRequest({
     isFormData = false,
 }) {
     /**
-     * WHY: We set maxRedirects to 0 because many legacy systems (like Parabank) 
-     * use 302 Redirects as a success indicator for form submissions. 
+     * WHY: We set maxRedirects to 0 because many legacy systems (like Parabank)
+     * use 302 Redirects as a success indicator for form submissions.
      * Allowing Playwright to follow redirects would skip these status code assertions.
      */
     const httpRequestOptions = {
         headers: {},
-        maxRedirects: 0
+        maxRedirects: 0,
     };
 
     // 1. Header Orchestration
     if (headers) {
         if (typeof headers === 'string') {
             /**
-             * WHY: A common pattern in this framework is passing a string token. 
+             * WHY: A common pattern in this framework is passing a string token.
              * We automatically wrap it in the expected 'Token' format for authorization.
              */
             httpRequestOptions.headers['Authorization'] = `Token ${headers}`;
@@ -56,7 +56,7 @@ export async function apiRequest({
     if (body) {
         if (isFormData) {
             /**
-             * WHY: Playwright uses the 'form' key to automatically set the 
+             * WHY: Playwright uses the 'form' key to automatically set the
              * 'application/x-www-form-urlencoded' Content-Type and format the body.
              */
             httpRequestOptions.form = body;
@@ -72,7 +72,12 @@ export async function apiRequest({
     const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
 
     // 4. Request Execution
-    const networkResponse = await executeNetworkCall(request, method, requestUrl, httpRequestOptions);
+    const networkResponse = await executeNetworkCall(
+        request,
+        method,
+        requestUrl,
+        httpRequestOptions,
+    );
 
     // 5. Response Sanitization and Parsing
     const statusCode = networkResponse.status();
@@ -82,33 +87,39 @@ export async function apiRequest({
     return {
         status: statusCode,
         body: parsedBody,
-        headers: responseHeaders
+        headers: responseHeaders,
     };
 }
 
 /**
  * Internal helper to map HTTP methods to Playwright request actions.
- * 
- * WHY: Separating the execution logic from the configuration logic adheres 
+ *
+ * WHY: Separating the execution logic from the configuration logic adheres
  * to the Single Responsibility Principle, making the code easier to maintain.
  */
 async function executeNetworkCall(request, method, url, options) {
     const verb = method.toUpperCase();
     switch (verb) {
-        case 'POST': return await request.post(url, options);
-        case 'GET': return await request.get(url, options);
-        case 'PUT': return await request.put(url, options);
-        case 'DELETE': return await request.delete(url, options);
-        case 'PATCH': return await request.patch(url, options);
-        default: throw new Error(`Unsupported HTTP method: ${verb}`);
+        case 'POST':
+            return await request.post(url, options);
+        case 'GET':
+            return await request.get(url, options);
+        case 'PUT':
+            return await request.put(url, options);
+        case 'DELETE':
+            return await request.delete(url, options);
+        case 'PATCH':
+            return await request.patch(url, options);
+        default:
+            throw new Error(`Unsupported HTTP method: ${verb}`);
     }
 }
 
 /**
  * Intelligent response body parser.
- * 
- * WHY: API responses are not always JSON. This helper attempts to parse JSON 
- * first but gracefully falls back to plain text (common for success messages 
+ *
+ * WHY: API responses are not always JSON. This helper attempts to parse JSON
+ * first but gracefully falls back to plain text (common for success messages
  * in Parabank), ensuring tests don't crash on non-JSON payloads.
  */
 async function parseResponseBody(response) {
@@ -118,9 +129,9 @@ async function parseResponseBody(response) {
 
         try {
             return JSON.parse(rawText);
-        } catch (jsonError) {
+        } catch (_jsonError) {
             /**
-             * WHY: If JSON parsing fails, we return the raw text. This is 
+             * WHY: If JSON parsing fails, we return the raw text. This is
              * intentional for endpoints that return simple confirmation strings.
              */
             return rawText;
@@ -133,30 +144,28 @@ async function parseResponseBody(response) {
 
 /**
  * Extracts a specific cookie by name from the response headers.
- * 
- * WHY: In CI environments, Playwright often merges multiple 'set-cookie' 
- * headers into a single string separated by newlines (\n). This robust 
+ *
+ * WHY: In CI environments, Playwright often merges multiple 'set-cookie'
+ * headers into a single string separated by newlines (\n). This robust
  * parser splits those entries and correctly isolates the Name=Value pair.
  */
 export function extractCookie(headers, cookieName) {
     // Playwright normalizes all header keys to lowercase
     const setCookie = headers['set-cookie'];
-    
+
     if (!setCookie) {
         console.error(' [DEBUG] No set-cookie header found in: ', JSON.stringify(headers));
         return null;
     }
 
     // 1. Split by newline (Playwright's merge character) or handle as array
-    const cookieEntries = Array.isArray(setCookie) 
-        ? setCookie 
-        : setCookie.split('\n');
+    const cookieEntries = Array.isArray(setCookie) ? setCookie : setCookie.split('\n');
 
     for (const entry of cookieEntries) {
         // 2. Each entry looks like "JSESSIONID=123; Path=/; HttpOnly"
         // We only care about the part before the first semicolon
         const firstPart = entry.split(';')[0].trim();
-        const [name, value] = firstPart.split('=');
+        const [name] = firstPart.split('=');
 
         if (name && name.toLowerCase() === cookieName.toLowerCase()) {
             return firstPart; // Returns "JSESSIONID=XXXXX"

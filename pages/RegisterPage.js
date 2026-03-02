@@ -12,18 +12,40 @@ export class RegisterPage {
 
     // ==================== Locators ====================
 
-    get firstNameInput() { return this.page.locator('input[id="customer.firstName"]'); }
-    get lastNameInput() { return this.page.locator('input[id="customer.lastName"]'); }
-    get streetInput() { return this.page.locator('input[id="customer.address.street"]'); }
-    get cityInput() { return this.page.locator('input[id="customer.address.city"]'); }
-    get stateInput() { return this.page.locator('input[id="customer.address.state"]'); }
-    get zipCodeInput() { return this.page.locator('input[id="customer.address.zipCode"]'); }
-    get phoneInput() { return this.page.locator('input[id="customer.phoneNumber"]'); }
-    get ssnInput() { return this.page.locator('input[id="customer.ssn"]'); }
-    get usernameInput() { return this.page.locator('input[id="customer.username"]'); }
-    get passwordInput() { return this.page.locator('input[id="customer.password"]'); }
-    get confirmPasswordInput() { return this.page.locator('input[id="repeatedPassword"]'); }
-    
+    get firstNameInput() {
+        return this.page.locator('input[id="customer.firstName"]');
+    }
+    get lastNameInput() {
+        return this.page.locator('input[id="customer.lastName"]');
+    }
+    get streetInput() {
+        return this.page.locator('input[id="customer.address.street"]');
+    }
+    get cityInput() {
+        return this.page.locator('input[id="customer.address.city"]');
+    }
+    get stateInput() {
+        return this.page.locator('input[id="customer.address.state"]');
+    }
+    get zipCodeInput() {
+        return this.page.locator('input[id="customer.address.zipCode"]');
+    }
+    get phoneInput() {
+        return this.page.locator('input[id="customer.phoneNumber"]');
+    }
+    get ssnInput() {
+        return this.page.locator('input[id="customer.ssn"]');
+    }
+    get usernameInput() {
+        return this.page.locator('input[id="customer.username"]');
+    }
+    get passwordInput() {
+        return this.page.locator('input[id="customer.password"]');
+    }
+    get confirmPasswordInput() {
+        return this.page.locator('input[id="repeatedPassword"]');
+    }
+
     get registerButton() {
         return this.page.locator('input[value="Register"]');
     }
@@ -44,9 +66,9 @@ export class RegisterPage {
 
     /**
      * Standardized method to retrieve text from a locator.
-     * WHY: Centralizing this logic follows the DRY principle. It ensures consistent 
+     * WHY: Centralizing this logic follows the DRY principle. It ensures consistent
      * waiting for visibility and string trimming across all registration assertions.
-     * 
+     *
      * @param {import('@playwright/test').Locator} locator
      */
     async _getTrimmedText(locator) {
@@ -59,10 +81,10 @@ export class RegisterPage {
 
     /**
      * Populates the entire registration form.
-     * WHY: We use a structured userData object to keep the method interface clean 
+     * WHY: We use a structured userData object to keep the method interface clean
      * and compatible with our random data generation utilities.
-     * 
-     * @param {Object} userData 
+     *
+     * @param {Object} userData
      */
     async fillRegistrationForm(userData) {
         await this.firstNameInput.fill(userData.firstName);
@@ -77,8 +99,8 @@ export class RegisterPage {
         await this.passwordInput.fill(userData.password);
 
         /**
-         * WHY: Many data generators provide one password. To ensure a successful 
-         * registration, we default the confirmation field to match the primary password 
+         * WHY: Many data generators provide one password. To ensure a successful
+         * registration, we default the confirmation field to match the primary password
          * unless a specific confirmation value is provided.
          */
         const confirmation = userData.confirmPassword || userData.password;
@@ -94,7 +116,7 @@ export class RegisterPage {
 
     /**
      * A high-level workflow to register a user in a single call.
-     * WHY: This abstraction allows tests to focus on the intent (onboarding a user) 
+     * WHY: This abstraction allows tests to focus on the intent (onboarding a user)
      * rather than the specific form fields, following the Single Responsibility Principle.
      */
     async registerNewUser(userData) {

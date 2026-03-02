@@ -19,32 +19,58 @@ export class ProfilePage {
     }
 
     /**
-     * WHY: We use double backslashes (\\) to escape the dots in Parabank's 
+     * WHY: We use double backslashes (\\) to escape the dots in Parabank's
      * ID attributes, as dots are normally interpreted as CSS classes.
      */
-    get firstNameInput() { return this.page.locator('#customer\\.firstName'); }
-    get lastNameInput() { return this.page.locator('#customer\\.lastName'); }
-    get addressInput() { return this.page.locator('#customer\\.address\\.street'); }
-    get cityInput() { return this.page.locator('#customer\\.address\\.city'); }
-    get stateInput() { return this.page.locator('#customer\\.address\\.state'); }
-    get zipCodeInput() { return this.page.locator('#customer\\.address\\.zipCode'); }
-    get phoneNumberInput() { return this.page.locator('#customer\\.phoneNumber'); }
+    get firstNameInput() {
+        return this.page.locator('#customer\\.firstName');
+    }
+    get lastNameInput() {
+        return this.page.locator('#customer\\.lastName');
+    }
+    get addressInput() {
+        return this.page.locator('#customer\\.address\\.street');
+    }
+    get cityInput() {
+        return this.page.locator('#customer\\.address\\.city');
+    }
+    get stateInput() {
+        return this.page.locator('#customer\\.address\\.state');
+    }
+    get zipCodeInput() {
+        return this.page.locator('#customer\\.address\\.zipCode');
+    }
+    get phoneNumberInput() {
+        return this.page.locator('#customer\\.phoneNumber');
+    }
 
     get updateProfileButton() {
         return this.page.locator('input.button[value="Update Profile"]');
     }
 
     // Error locators are grouped for validation scenarios
-    get firstNameError() { return this.page.locator('#firstName-error'); }
-    get lastNameError() { return this.page.locator('#lastName-error'); }
-    get streetError() { return this.page.locator('#street-error'); }
-    get cityError() { return this.page.locator('#city-error'); }
-    get stateError() { return this.page.locator('#state-error'); }
-    get zipCodeError() { return this.page.locator('#zipCode-error'); }
+    get firstNameError() {
+        return this.page.locator('#firstName-error');
+    }
+    get lastNameError() {
+        return this.page.locator('#lastName-error');
+    }
+    get streetError() {
+        return this.page.locator('#street-error');
+    }
+    get cityError() {
+        return this.page.locator('#city-error');
+    }
+    get stateError() {
+        return this.page.locator('#state-error');
+    }
+    get zipCodeError() {
+        return this.page.locator('#zipCode-error');
+    }
 
     get successMessage() {
         return this.page.locator('#rightPanel p', {
-            hasText: 'Your updated address and phone number have been added to the system.'
+            hasText: 'Your updated address and phone number have been added to the system.',
         });
     }
 
@@ -52,7 +78,7 @@ export class ProfilePage {
 
     /**
      * Standardized text extraction helper.
-     * WHY: Centralizing this ensures we handle visibility and trimming 
+     * WHY: Centralizing this ensures we handle visibility and trimming
      * consistently across all text-based assertions in the POM.
      */
     async _getTrimmedText(locator) {
@@ -61,19 +87,19 @@ export class ProfilePage {
         return text ? text.trim() : '';
     }
 
-    // ==================== Actions ====================  
+    // ==================== Actions ====================
 
     /**
      * Populates the profile form.
-     * WHY: We assume the structure of the userData object matches our 
+     * WHY: We assume the structure of the userData object matches our
      * global user generation helpers to maintain data consistency.
-     * 
-     * @param {Object} userData 
+     *
+     * @param {Object} userData
      */
     async fillProfileForm(userData) {
         await this.firstNameInput.fill(userData.firstName);
         await this.lastNameInput.fill(userData.lastName);
-        
+
         // Handling nested address object if provided, otherwise fallback to flat property
         const street = userData.address?.street || userData.address;
         const city = userData.address?.city || userData.city;
@@ -96,10 +122,10 @@ export class ProfilePage {
 
     /**
      * High-level workflow for updating a profile.
-     * WHY: This abstraction allows tests to focus on the intent (updating data) 
+     * WHY: This abstraction allows tests to focus on the intent (updating data)
      * rather than the individual UI steps.
-     * 
-     * @param {Object} userData 
+     *
+     * @param {Object} userData
      */
     async updateProfile(userData) {
         await this.fillProfileForm(userData);

@@ -9,7 +9,7 @@ export class AccountsOverviewPage {
      */
     static COLUMN_INDEX = {
         BALANCE: 1,
-        AVAILABLE_AMOUNT: 2
+        AVAILABLE_AMOUNT: 2,
     };
 
     constructor(page) {
@@ -26,34 +26,34 @@ export class AccountsOverviewPage {
 
     /**
      * Locates a specific row in the table based on the Account ID.
-     * WHY: Parabank dynamically generates IDs in the href of the account links. 
+     * WHY: Parabank dynamically generates IDs in the href of the account links.
      * Filtering by the href attribute is the most unique and robust way to target a specific row.
      */
     _getAccountRow(accountId) {
         return this.page.locator('#accountTable tbody tr', {
-            has: this.page.locator(`a[href*="id=${accountId}"]`)
+            has: this.page.locator(`a[href*="id=${accountId}"]`),
         });
     }
 
     /**
      * Common logic to retrieve text from a specific column for a specific account.
-     * WHY: This follows the DRY principle by centralizing the "Locate -> Wait -> Extract" 
+     * WHY: This follows the DRY principle by centralizing the "Locate -> Wait -> Extract"
      * workflow used by all balance-related getters.
-     * 
-     * @param {string} accountId 
-     * @param {number} colIndex 
+     *
+     * @param {string} accountId
+     * @param {number} colIndex
      */
     async _getAccountField(accountId, colIndex) {
         const row = this._getAccountRow(accountId);
         const cell = row.locator('td').nth(colIndex);
 
         /**
-         * WHY: Table data in Parabank is often populated via AJAX. 
-         * Waiting for 'visible' ensures the dynamic content has finished loading 
+         * WHY: Table data in Parabank is often populated via AJAX.
+         * Waiting for 'visible' ensures the dynamic content has finished loading
          * before we attempt to read the text.
          */
         await cell.waitFor({ state: 'visible' });
-        
+
         const content = await cell.textContent();
         return content ? content.trim() : '';
     }
@@ -62,7 +62,7 @@ export class AccountsOverviewPage {
 
     /**
      * Retrieves the Balance for the specified account.
-     * @param {string} accountId 
+     * @param {string} accountId
      */
     async getAccountBalance(accountId) {
         return this._getAccountField(accountId, AccountsOverviewPage.COLUMN_INDEX.BALANCE);
@@ -70,7 +70,7 @@ export class AccountsOverviewPage {
 
     /**
      * Retrieves the Available Amount for the specified account.
-     * @param {string} accountId 
+     * @param {string} accountId
      */
     async getAvailableAmount(accountId) {
         return this._getAccountField(accountId, AccountsOverviewPage.COLUMN_INDEX.AVAILABLE_AMOUNT);

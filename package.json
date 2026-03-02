@@ -1,47 +1,78 @@
 {
-  "name": "parabank-playwright-js-pom",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "npx playwright test",
-    "test:chromium": "npx playwright test --project=chromium",
-    "test:firefox": "npx playwright test --project=firefox",
-    "test:webkit": "npx playwright test --project=webkit",
-    "test:ui": "npx playwright test --project=chromium --ui",
-    "test:headed": "npx playwright test --project=chromium --headed",
-    "test:debug": "npx playwright test --project=chromium --debug",
-    "test:api": "npx playwright test --grep @api --project=chromium",
-    "test:e2e": "npx playwright test --grep @e2e --project=chromium",
-    "test:smoke": "npx playwright test --grep @smoke --project=chromium",
-    "test:regression": "npx playwright test --grep @regression --project=chromium",
-    "test:journey": "npx playwright test --grep @journey --project=chromium",
-    "test:ci": "npx playwright test --project=chromium --workers=1",
-    "allure:clean": "rm -rf allure-results allure-report",
-    "allure:generate": "npx allure generate allure-results --clean -o allure-report",
-    "allure:open": "npx allure open allure-report",
-    "allure": "npm run allure:clean && npm run test || npm run allure:generate && npm run allure:open",
-    "smoke": "npm run allure:clean && npm run test:smoke || npm run allure:generate && npm run allure:open"
-  },
-  "keywords": [
-    "playwright",
-    "automation",
-    "allure",
-    "pom"
-  ],
-  "author": "Automation Specialist",
-  "license": "ISC",
-  "devDependencies": {
-    "@faker-js/faker": "^9.8.0",
-    "@playwright/test": "^1.52.0",
-    "@types/node": "^22.15.21",
-    "allure-commandline": "^2.30.0",
-    "allure-playwright": "^3.4.5",
-    "dotenv": "^17.2.4"
-  },
-  "dependencies": {
-    "playwright": "^1.52.0",
-    "playwright-core": "^1.52.0",
-    "zod": "^4.3.6"
-  },
-  "description": "Playwright POM Framework for Parabank"
+    "name": "parabank-playwright-js-pom",
+    "version": "1.0.0",
+    "description": "Enterprise Playwright POM Framework for Parabank with Shift-Left Quality Hooks",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "// --- QUALITY GATE SCRIPTS ---": "",
+        "prepare": "husky",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write \"**/*.js\"",
+        "// --- PLAYWRIGHT TEST EXECUTION ---": "",
+        "test": "npx playwright test",
+        "test:chromium": "npx playwright test --project=chromium",
+        "test:firefox": "npx playwright test --project=firefox",
+        "test:webkit": "npx playwright test --project=webkit",
+        "test:ui": "npx playwright test --project=chromium --ui",
+        "test:headed": "npx playwright test --project=chromium --headed",
+        "test:debug": "npx playwright test --project=chromium --debug",
+        "// --- TAG-BASED EXECUTION ---": "",
+        "test:api": "npx playwright test --grep @api --project=chromium",
+        "test:e2e": "npx playwright test --grep @e2e --project=chromium",
+        "test:smoke": "npx playwright test --grep @smoke --project=chromium",
+        "test:regression": "npx playwright test --grep @regression --project=chromium",
+        "test:journey": "npx playwright test --grep @journey --project=chromium",
+        "test:nightly": "npx playwright test --grep @nightly --project=chromium",
+        "// --- CI & UTILITY ---": "",
+        "test:ci": "npx playwright test --project=chromium --workers=1",
+        "// --- ALLURE REPORTING ---": "",
+        "allure:clean": "rm -rf allure-results allure-report",
+        "allure:generate": "npx allure generate allure-results --clean -o allure-report",
+        "allure:open": "npx allure open allure-report",
+        "allure": "npm run allure:clean && npm run test || npm run allure:generate && npm run allure:open",
+        "smoke": "npm run allure:clean && npm run test:smoke || npm run allure:generate && npm run allure:open"
+    },
+    "lint-staged": {
+        "**/*.js": [
+            "eslint --fix",
+            "prettier --write"
+        ],
+        "**/*.{json,md,yml}": [
+            "prettier --write"
+        ]
+    },
+    "keywords": [
+        "playwright",
+        "automation",
+        "allure",
+        "pom",
+        "husky",
+        "lint-staged"
+    ],
+    "author": "Automation Specialist",
+    "license": "ISC",
+    "devDependencies": {
+        "@eslint/js": "^9.39.3",
+        "@faker-js/faker": "^9.8.0",
+        "@playwright/test": "^1.52.0",
+        "@types/node": "^22.15.21",
+        "allure-commandline": "^2.30.0",
+        "allure-playwright": "^3.4.5",
+        "dotenv": "^17.2.4",
+        "eslint": "^9.39.3",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-playwright": "^2.9.0",
+        "eslint-plugin-prettier": "^5.5.5",
+        "globals": "^17.4.0",
+        "husky": "^9.1.7",
+        "lint-staged": "^15.4.3",
+        "prettier": "^3.8.1"
+    },
+    "dependencies": {
+        "playwright": "^1.52.0",
+        "playwright-core": "^1.52.0",
+        "zod": "^4.3.6"
+    }
 }

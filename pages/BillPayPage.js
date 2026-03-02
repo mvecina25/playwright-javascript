@@ -59,7 +59,7 @@ export class BillPayPage {
 
     get paymentSuccessTitle() {
         /**
-         * WHY: We target the specific div with 'ng-show="showResult"' to ensure 
+         * WHY: We target the specific div with 'ng-show="showResult"' to ensure
          * we are looking at the result view rather than a generic page heading.
          */
         return this.page.locator('div[ng-show="showResult"] h1.title');
@@ -73,7 +73,7 @@ export class BillPayPage {
 
     /**
      * Internal helper to retrieve and sanitize text.
-     * WHY: Centralizing text retrieval ensures that we always handle potential 
+     * WHY: Centralizing text retrieval ensures that we always handle potential
      * whitespace issues consistently across the entire POM.
      */
     async _getTrimmedText(locator) {
@@ -82,14 +82,14 @@ export class BillPayPage {
         return text ? text.trim() : '';
     }
 
-    // ==================== Actions ====================  
+    // ==================== Actions ====================
 
     /**
      * Populates all fields in the Bill Payment form.
-     * WHY: This method accepts a structured object to keep the method signature 
+     * WHY: This method accepts a structured object to keep the method signature
      * clean and easy to read.
-     * 
-     * @param {Object} paymentData 
+     *
+     * @param {Object} paymentData
      */
     async fillBillPaymentForm(paymentData) {
         // Filling personal details
@@ -121,7 +121,7 @@ export class BillPayPage {
 
     /**
      * A high-level workflow method to pay a bill in a single call.
-     * WHY: This follows the Single Responsibility Principle for high-level 
+     * WHY: This follows the Single Responsibility Principle for high-level
      * interactions, making test scripts more declarative and less imperative.
      */
     async payBill(paymentData) {

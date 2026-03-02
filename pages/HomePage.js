@@ -32,9 +32,9 @@ export class HomePage {
 
     /**
      * Internal helper to wait for a locator and return its trimmed text.
-     * WHY: Centralizing this logic follows the DRY principle and prevents 
+     * WHY: Centralizing this logic follows the DRY principle and prevents
      * repetitive null-checking and waiting code across every getter method.
-     * 
+     *
      * @param {import('@playwright/test').Locator} locator
      */
     async _getTrimmedText(locator) {
@@ -44,6 +44,21 @@ export class HomePage {
     }
 
     // ==================== Actions ====================
+
+    /**
+     * WHY: This is a state-guard method. By moving the conditional logic here,
+     * we satisfy the 'no-conditional-in-test' rule. It ensures the browser
+     * is in a clean, unauthenticated state regardless of previous test outcomes.
+     */
+    async ensureLoggedOut() {
+        /**
+         * WHY: We check the visibility of the logout link. If it's present,
+         * we perform a logout to reset the session. If not, we do nothing.
+         */
+        if (await this.logoutLink.isVisible()) {
+            await this.clickLogout();
+        }
+    }
 
     /**
      * Retrieves the welcome banner text (e.g., "Welcome John Doe").
@@ -61,7 +76,7 @@ export class HomePage {
 
     /**
      * Determines if the user is authenticated by checking for the logout link.
-     * WHY: In Parabank, the presence of the logout link is the most reliable 
+     * WHY: In Parabank, the presence of the logout link is the most reliable
      * indicator that an active session exists.
      */
     async isUserLoggedIn() {
@@ -70,9 +85,9 @@ export class HomePage {
 
     /**
      * Navigates to a specific page via the left-hand menu.
-     * WHY: Using the role 'link' with a specific name is more resilient 
+     * WHY: Using the role 'link' with a specific name is more resilient
      * to UI changes than using indexed CSS selectors.
-     * 
+     *
      * @param {string} linkName - The visible text of the menu link.
      */
     async navigateViaLeftMenu(linkName) {
@@ -82,7 +97,7 @@ export class HomePage {
 
     /**
      * Extracts the account ID from the first row of the account overview table.
-     * WHY: This is used to capture the default account created by the system 
+     * WHY: This is used to capture the default account created by the system
      * for use in subsequent transaction tests.
      */
     async getFirstAccountId() {

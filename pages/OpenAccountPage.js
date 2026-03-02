@@ -1,8 +1,8 @@
-import { expect } from "@playwright/test";
+import { expect } from '@playwright/test';
 
 /**
  * Page Object Model for the Open New Account module.
- * This class handles the selection of account types and the capture of 
+ * This class handles the selection of account types and the capture of
  * newly generated account numbers.
  */
 export class OpenAccountPage {
@@ -29,7 +29,7 @@ export class OpenAccountPage {
 
     get successMessage() {
         return this.page.locator('#rightPanel p', {
-            hasText: 'Congratulations, your account is now open.'
+            hasText: 'Congratulations, your account is now open.',
         });
     }
 
@@ -41,7 +41,7 @@ export class OpenAccountPage {
 
     /**
      * Standardized text extraction helper.
-     * WHY: Centralizing this ensures we handle visibility and whitespace 
+     * WHY: Centralizing this ensures we handle visibility and whitespace
      * consistently, reducing boilerplate in public methods.
      */
     async _getTrimmedText(locator) {
@@ -52,8 +52,8 @@ export class OpenAccountPage {
 
     /**
      * Executes a click with automatic retries.
-     * WHY: Parabank's "Open New Account" button is notoriously flaky due to 
-     * client-side re-rendering. Using 'toPass' is the modern Playwright 
+     * WHY: Parabank's "Open New Account" button is notoriously flaky due to
+     * client-side re-rendering. Using 'toPass' is the modern Playwright
      * approach to handle transient "element intercepted" or "detached" errors.
      */
     async _clickWithRetry(locator) {
@@ -61,7 +61,7 @@ export class OpenAccountPage {
             await locator.click();
         }).toPass({
             intervals: [200, 500],
-            timeout: 5000
+            timeout: 5000,
         });
     }
 
@@ -69,9 +69,9 @@ export class OpenAccountPage {
 
     /**
      * Orchestrates the account opening process.
-     * WHY: We provide default parameters to make the test call concise, 
+     * WHY: We provide default parameters to make the test call concise,
      * while allowing overrides for specific scenarios (e.g., Opening checking vs savings).
-     * 
+     *
      * @param {string} accountType - 'CHECKING' or 'SAVINGS'
      * @param {string|null} fromAccountId - The ID of the funding account
      */
@@ -81,8 +81,8 @@ export class OpenAccountPage {
 
         if (fromAccountId) {
             /**
-             * WHY: Dropdowns in Parabank are often populated via AJAX after the 
-             * page loads. We ensure the dropdown actually contains the required 
+             * WHY: Dropdowns in Parabank are often populated via AJAX after the
+             * page loads. We ensure the dropdown actually contains the required
              * ID before selecting to prevent "option not found" errors.
              */
             await expect(this.fromAccountDropdown.locator('option')).not.toHaveCount(0);

@@ -103,30 +103,32 @@ A robust, enterprise-grade test automation framework built with **Playwright (Ja
 
 ## Project Structure
 
-```
+````
+## 📂 Project Structure
+
+```text
 root/
 ├── .github/
 │   └── workflows/
-│       ├── nightly-tests.yml               # Scheduled nightly regression
-│       └── smoke-tests.yml                 # PR/push validation
-├── .vscode/                                # IDE settings
-├── allure-report/                          # Generated Allure HTML
-├── allure-results/                         # Raw Allure test results
-├── fixtures/
-│   ├── api/
-│   │   ├── schemas/
-│   │   │   ├── transactionSchema.js        # Zod schema for transactions
-│   │   │   └── userSchema.js               # Zod schema for users
-│   │   └── apiFixtures.js                  # API request fixture
-│   └── pom/
-│       ├── customFixtures.js               # Business-logic fixtures
-│       ├── pomFixtures.js                  # Page object fixtures
-│       └── indexFixtures.js                # Unified fixture export
-├── node_modules/
-├── pages/                                  # Page Object Models
+│       ├── nightly-tests.yml             # Scheduled nightly regression pipeline
+│       └── smoke-tests.yml               # PR/push validation pipeline
+├── .husky/                               # Git hooks for code quality
+│   └── pre-commit                        # Triggers lint-staged before commit
+├── .vscode/                              # Workspace and IDE settings
+├── allure-report/                        # Generated interactive Allure HTML report
+├── allure-results/                       # Raw JSON Allure test results
+├── env/                                  # Multi-environment configurations
+│   ├── .env.dev                          # Local development environment variables
+│   └── .env.example                      # Template for required environment variables
+├── fixtures/                             # Playwright Fixture Orchestration
+│   ├── api/                              # API request & schema validation fixtures
+│   ├── pom/                              # Page Object & custom business logic fixtures
+│   └── indexFixtures.js                  # Unified fixture hub (import from here)
+├── node_modules/                         # Installed npm dependencies
+├── pages/                                # Page Object Models (POMs)
 │   ├── AccountActivityPage.js
 │   ├── AccountsOverviewPage.js
-│   ├── BasePage.js
+│   ├── BasePage.js                       # Global navigation & shared page utilities
 │   ├── BillPayPage.js
 │   ├── HomePage.js
 │   ├── LoginPage.js
@@ -134,34 +136,35 @@ root/
 │   ├── ProfilePage.js
 │   ├── RegisterPage.js
 │   └── TransferFundsPage.js
-├── playwright-report/                      # Playwright's native report
-├── test-results/                           # Artifacts (traces, videos)
-├── tests/
+├── playwright-report/                    # Default Playwright HTML reporter output
+├── test-results/                         # Artifacts (traces, screenshots, videos)
+├── tests/                                # Test Specifications
 │   ├── api/
 │   │   └── journeys/
-│   │       └── user-journey-api.spec.js    # API-only journey
-│   ├── e2e/
-│   │   ├── features/
-│   │   ├── accounts/
-│   │   │   ├── bill-pay.spec.js
-│   │   │   ├── open-account.spec.js
-│   │   │   └── transfer-funds.spec.js
-│   │   └── auth/
-│   │       ├── login.spec.js
-│   │       └── register.spec.js
-│   └── journeys/
-│       └── user-journey.spec.js            # Full UI + API journey
-├── utils/
-│   ├── api-helper.js                       # Centralized HTTP client
-│   ├── credentials.json                    # Persisted test users
-│   └── helpers.js                          # Data generators & file utils
-├── .env                                    # Local environment config
-├── .gitignore
-├── package-lock.json
-├── package.json
-├── playwright.config.js                    # Playwright master config
-└── README.md
-```
+│   │       └── user-journey-api.spec.js  # API-only data contract & ledger validation
+│   └── e2e/
+│       ├── features/
+│       │   ├── accounts/
+│       │   │   ├── bill-pay.spec.js      # Bill payment functional tests
+│       │   │   ├── open-account.spec.js  # Account opening functional tests
+│       │   │   └── transfer-funds.spec.js# Fund transfer functional tests
+│       │   └── auth/
+│       │       ├── login.spec.js         # Authentication functional tests
+│       │       └── register.spec.js      # User onboarding functional tests
+│       └── journeys/
+│           └── user-journey.spec.js      # Full End-to-End multi-page workflow
+├── utils/                                # Helper Functions & Utilities
+│   ├── api-helper.js                     # REST client & cookie extraction utility
+│   ├── credentials.json                  # Persisted test user audit trail
+│   └── helpers.js                        # Faker data generation & file read/write
+├── .gitignore                            # Untracked files and folders
+├── .prettierrc                           # Prettier code formatting rules
+├── eslint.config.mjs                     # ESLint Flat Config with Playwright plugins
+├── package-lock.json                     # Dependency lockfile
+├── package.json                          # Project scripts and dependencies
+├── playwright.config.js                  # Core Playwright runner configuration
+└── README.md                             # Framework documentation
+````
 
 ---
 

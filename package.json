@@ -1,5 +1,5 @@
 {
-    "name": "parabank-playwright-js-pom",
+    "name": "playwright-javascript",
     "version": "1.0.0",
     "description": "Enterprise Playwright POM Framework for Parabank with Shift-Left Quality Hooks",
     "main": "index.js",

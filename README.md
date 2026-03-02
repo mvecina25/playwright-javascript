@@ -25,77 +25,102 @@ A robust, enterprise-grade test automation framework built with **Playwright (Ja
 
 ## ✨ Features
 
-- **Hybrid Testing Framework** – Supports both UI (E2E) and API testing within a single unified test suite
-- **Page Object Model (POM)** – Clean separation of test logic from page interactions with lazy-loaded fixtures
-- **Custom Fixtures** – Reusable test setup with dependency injection and automatic teardown
-- **Data Generation** – Realistic, unique test data using `@faker-js/faker` with timestamp guarantees
-- **Schema Validation** – API contract testing with **Zod** to enforce data integrity at the network boundary
-- **Allure Reporting** – Interactive, visually rich test reports with history, trends, and categorizations
-- **GitHub Pages Deployment** – Automatic report publishing for stakeholder visibility
-- **Tag-Based Execution** – Run tests by `@smoke`, `@regression`, `@nightly`, `@journey` for flexible pipeline integration
-- **Cross-Browser Testing** – Chromium, Firefox, WebKit with consistent viewport configuration
-- **Parallel Execution** – Optimized for speed in CI environments with configurable worker pools
-- **Flake Resistance** – Built-in retry strategies, `toPass()` assertions, and wait mechanisms
-- **Multi-Environment Support** – Configurable via `.env` and GitHub Variables with manual override capabilities
-- **Credential Management** – Automatic saving and retrieval of test user credentials for debugging and reuse
-- **Session Management** – Cookie extraction and reuse for stateful API testing
-- **CI/CD Integration** – Two production-ready GitHub Actions workflows with detailed step documentation
+- **Hybrid Testing Architecture** – Seamlessly integrates UI (End-to-End) and REST API testing within a single unified framework.
+- **Advanced Page Object Model (POM)** – Implements a clean separation of concerns, decoupling locators from business logic for high maintainability.
+- **Fixture-Based Dependency Injection** – Utilizes a unified fixture hub for lazy-loaded Page Objects and API clients, reducing test boilerplate.
+- **API Contract Validation** – Employs **Zod** to enforce strict schema validation at the network boundary, catching backend regressions instantly.
+- **Dynamic Data Generation** – Integrated with **Faker** to produce realistic, unique test identities with timestamped uniqueness guarantees.
+- **Interactive Allure Reporting** – Generates rich, visual reports featuring execution trends, categorical breakdowns, and historical data.
+- **Multi-Environment Management** – Supports switching between Dev, Staging, and Production tiers via dynamic `.env` loading and strict fail-fast configuration.
+- **Stateful Session Management** – Advanced cookie extraction and injection utilities to maintain authenticated sessions across legacy and REST endpoints.
+- **Production-Ready CI/CD** – Includes optimized GitHub Actions workflows for **Nightly Regressions** and **Smoke Testing** with automated GitHub Pages deployment.
+- **Enterprise Code Quality** – Enforces industry standards via **ESLint**, **Prettier**, and **Husky** pre-commit hooks to ensure a "Green" repository.
+- **Performance Optimized** – Configured for fully parallel execution with smart worker management to prevent resource exhaustion in CI environments.
+- **Robust Stability Logic** – Mitigates flakiness in legacy systems using web-first assertions and specialized `toPass()` retry mechanisms.
+- **Flexible Tagging System** – Enables targeted execution using `@smoke`, `@regression`, `@journey`, and `@api` tags via the Playwright Grep engine.
 
 ---
 
 ## 🛠 Tech Stack
 
-| Tool/Library                                                          | Purpose                                                     |
-| --------------------------------------------------------------------- | ----------------------------------------------------------- |
-| [Playwright](https://playwright.dev/)                                 | Browser automation, API testing, network interception       |
-| [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) | Primary programming language (ES6+ modules)                 |
-| [Allure Report](https://qameta.io/allure-report/)                     | Test reporting with history, graphs, and trends             |
-| [Zod](https://zod.dev/)                                               | Runtime schema validation for API contract testing          |
-| [Faker](https://fakerjs.dev/)                                         | Realistic, locale-aware test data generation                |
-| [Dotenv](https://github.com/motdotla/dotenv)                          | Environment variable management across environments         |
-| [GitHub Actions](https://github.com/features/actions)                 | CI/CD pipelines with matrix testing and artifact management |
+| Tool/Library                                                                     | Purpose                | Benefit                                                                                  |
+| :------------------------------------------------------------------------------- | :--------------------- | :--------------------------------------------------------------------------------------- |
+| **[Playwright](https://playwright.dev/)**                                        | Core Automation Engine | Unified framework for UI, API, and cross-browser testing with auto-waiting capabilities. |
+| **[JavaScript (ES6+)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)** | Programming Language   | Highly flexible, industry-standard language using modern modular syntax.                 |
+| **[Zod](https://zod.dev/)**                                                      | Contract Validation    | Enforces strict schema validation for API responses to ensure data integrity.            |
+| **[Allure Report](https://qameta.io/allure-report/)**                            | Interactive Reporting  | Provides visually rich dashboards, historical trends, and detailed execution steps.      |
+| **[Faker](https://fakerjs.dev/)**                                                | Test Data Generation   | Generates randomized, realistic user identities, addresses, and financial data.          |
+| **[GitHub Actions](https://github.com/features/actions)**                        | CI/CD Orchestration    | Automates test execution on schedules or pull requests with GH Pages integration.        |
+| **[Husky & lint-staged](https://typicode.github.io/husky/)**                     | Git Hooks              | Automates code quality gates by running linters and formatters before every commit.      |
+| **[ESLint & Prettier](https://eslint.org/)**                                     | Code Quality           | Standardizes code style and prevents anti-patterns (e.g., hardcoded timeouts).           |
+| **[Dotenv](https://github.com/motdotla/dotenv)**                                 | Environment Management | Manages secrets and tier-specific configurations (Dev/Staging/Prod) securely.            |
 
 ---
 
 ## ✅ Prerequisites
 
-- **Node.js** (v20 or higher)
-- **npm** (v9 or higher)
-- **Git** (for cloning and version control)
-- **Playwright Browsers** (installed automatically via `npx playwright install`)
-- **Java Runtime** (optional, for local Allure CLI if not using `npx`)
+- **[Node.js](https://nodejs.org/)** – v20.x or later (LTS recommended).
+- **[npm](https://www.npmjs.com/)** – v10.x or later.
+- **[Git](https://git-scm.com/)** – Required for cloning the repository and managing version control.
+- **Playwright Browsers** – Installed via CLI (e.g., Chromium, Firefox, WebKit) once the project is initialized.
+- **Java Runtime Environment (JRE)** – Required only for serving **Allure Reports** locally using the `allure open` command.
+- **[VS Code](https://code.visualstudio.com/)** (Recommended) – Optimized for development with the included `.vscode` configuration and Playwright extension support.
 
 ---
 
 ## 🔧 Installation
 
-1. **Clone the repository**
+Follow these steps to initialize the framework and provision the required dependencies.
 
+### 1. Clone the Repository
+
+```bash
+git clone <your-repository-url>
+cd playwright-javascript
+```
+
+### 2. Install Project Dependencies
+
+We use `--force` to ensure consistent resolution of peer dependencies across different environments.
+
+```bash
+npm install --force
+```
+
+### 3. Provision Playwright Browsers
+
+Install the required browser binaries and their system-level dependencies.
+
+```bash
+npx playwright install --with-deps chromium
+```
+
+### 4. Configure Environment Variables
+
+The framework uses a centralized `env/` directory to manage tier-specific configurations.
+
+1. **Create the environment folder** (if it doesn't exist):
     ```bash
-    git clone https://github.com/your-org/playwright-javascript.git
-    cd playwright-javascript
-
+    mkdir env
+    ```
+2. **Initialize your development environment file**:
+    ```bash
+    cp env/.env.example env/.env.dev
+    ```
+3. **Update the variables**: Open `env/.env.dev` and ensure `APP_BASE_URL` points to your target Parabank instance:
+    ```ini
+    APP_BASE_URL=https://parabank.parasoft.com
     ```
 
-2. **Install dependencies**
+### 5. Initialize Husky (Git Hooks)
 
-    ```bash
-    npm install --force --omit=optional
+Ensure pre-commit hooks are active to maintain code quality standards.
 
-    ```
+```bash
+npx husky install
+```
 
-3. **Install Playwright browsers**
-
-    ```bash
-    npx playwright install --with-deps chromium
-
-    ```
-
-4. **Configure environment variables**
-    ```bash
-    cp .env.example .env
-    ```
-    Update APP_BASE_URL with your target environment (e.g., https://parabank.parasoft.com)
+---
 
 ## Project Structure
 
@@ -286,6 +311,8 @@ The framework integrates Allure for comprehensive, interactive HTML repo/rts.
 | Run & Report (All)   | npm run allure          |
 | Run & Report (Smoke) | npm run smoke           |
 
+---
+
 ## 📦 Dependencies & Tools
 
 ### Core Framework
@@ -298,6 +325,8 @@ The framework integrates Allure for comprehensive, interactive HTML repo/rts.
 - Faker (^9.8.0): Generates high-quality, randomized test data for user identities and addresses.
 - Dotenv (^17.2.4): Manages environment-specific variables.
 - Allure Playwright: Adapter for generating interactive test reports.
+
+---
 
 ## Writing Tests
 
@@ -381,6 +410,8 @@ for (const data of invalidCredentials) {
     );
 }
 ```
+
+---
 
 ## 🏛️ Page Object Model
 
@@ -498,6 +529,8 @@ export const test = base.extend({
     },
 });
 ```
+
+---
 
 ## 📡 API Testing
 
@@ -620,6 +653,8 @@ const response = await apiRequest({
 });
 ```
 
+---
+
 ## 🛠️ Coding Standards & Best Practices
 
 This framework enforces strict code quality and formatting standards to ensure the codebase remains maintainable, readable, and free of common automation pitfalls.
@@ -707,8 +742,6 @@ Standardized naming ensures the project structure is predictable.
 | **Files (Specs/Tests)**    | `kebab-case.spec.js` | `user-journey.spec.js`              |
 | **Test Tags**              | `@lowercase`         | `@smoke`, `@regression`, `@nightly` |
 
----
-
 ### 🏗️ Page Object Model (POM) Guidelines
 
 1.  **Locators as Getters**: All locators must be defined as `get` accessors. This ensures they are evaluated lazily at the moment of interaction.
@@ -719,8 +752,6 @@ Standardized naming ensures the project structure is predictable.
 3.  **Encapsulated Actions**: Methods should represent logical user flows (e.g., `login(user, pass)`) rather than individual clicks.
 4.  **Private Helpers**: Use the `_` prefix for internal utility methods (e.g., `_getTrimmedText()`) to keep the public API clean.
 5.  **Wait for Stability**: Utilize internal helpers like `_clickWithRetry()` or `toPass()` inside POMs for elements known to be flaky due to asynchronous re-rendering.
-
----
 
 ### 🧪 Test Authoring Standards
 
@@ -736,16 +767,12 @@ Standardized naming ensures the project structure is predictable.
     - `@journey`: End-to-end multi-step flows.
     - `@api`: Specialized ledger and contract validation.
 
----
-
 ### 🔗 API & Contract Testing Best Practices
 
 1.  **Schema Enforcement**: Every API response must be validated against a **Zod Schema**. This prevents "Silent Failures" where a test passes but the data structure has changed.
 2.  **Session Isolation**: Use the `extractCookie` utility to isolate `JSESSIONID`. Ensure cookies are explicitly passed in headers to simulate real browser behavior in REST calls.
 3.  **Intelligent Parsing**: API helpers must handle both JSON and Plain Text gracefully, as legacy systems like Parabank often return confirmation strings instead of JSON objects.
 4.  **Fail-Fast Config**: Use strict environment variable checking. If `APP_BASE_URL` is missing, the framework will `throw new Error` immediately rather than timing out.
-
----
 
 ### 🛠️ Quality Gatekeeping
 
@@ -754,8 +781,6 @@ Standardized naming ensures the project structure is predictable.
 - **Dry-Run Analysis**: Use `test:ui` or `test:debug` to visually verify locators before committing new Page Objects.
 
 ---
-
-Apologies, you are right. Here are the **Test Guidelines**, strictly following the structure of your reference but updated for your JavaScript implementation:
 
 ## 🧪 Test Guidelines
 

@@ -383,7 +383,7 @@ for (const data of invalidCredentials) {
 }
 ```
 
-## Page Object Model
+## 🏛️ Page Object Model
 
 ### Creating Page Objects
 
@@ -500,7 +500,7 @@ export const test = base.extend({
 });
 ```
 
-## API Testing
+## 📡 API Testing
 
 ### Making API Requests
 
@@ -578,7 +578,7 @@ if (!validation.success) {
 expect(validation.success).toBe(true);
 ```
 
-## Session & Authentication Management
+## 🔐 Session & Authentication Management
 
 **How It Works**
 
@@ -620,3 +620,153 @@ const response = await apiRequest({
     },
 });
 ```
+
+## 🛠️ Coding Standards & Best Practices
+
+This framework enforces strict code quality and formatting standards to ensure the codebase remains maintainable, readable, and free of common automation pitfalls.
+
+### 🧩 Linting with ESLint
+
+We use the modern ESLint Flat Config (eslint.config.mjs) to inherit standard JavaScript best practices and specialized Playwright rules.
+
+| Role                | Benefit                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| Playwright Plugin   | Enforces web-first assertions and handles asynchronous race conditions.                       |
+| No Wait For Timeout | Errors out if page.waitForTimeout() is used, forcing stable, signal-based waiting.            |
+| No Force Option     | Warns against using { force: true }, encouraging engineers to fix underlying UI state issues. |
+| Valid Titles        | Ensures test.step() and test() blocks have descriptive, meaningful names for reporting.       |
+
+**Commands:**
+
+```bash
+# Check for linting issues
+npm run lint
+
+# Automatically fix fixable issues
+npm run lint:fix
+```
+
+### 🎨 Formatting with Prettier
+
+Prettier is our "Single Source of Truth" for code style. It is integrated directly into ESLint, meaning formatting violations are flagged as linting errors.
+
+**Core Standards (.prettierrc):**
+
+- **Tabs**: 4 spaces for better visual hierarchy in complex Page Objects.
+- **Quotes**: Single quotes for cleaner string declarations.
+- **Semicolons**: Always enabled to prevent ASI (Automatic Semicolon Insertion) bugs.
+- **Trailing Commas**: Enabled for cleaner git diffs.
+
+**Commands:**
+
+```bash
+# Format the entire codebase
+npm run format
+```
+
+### 🛡️ Pre-commit Hooks (Husky)
+
+To maintain a "Green" repository, we utilize Husky and lint-staged. Every time a developer attempts to commit code, the following workflow is triggered automatically:
+
+1. **Stage**: Only modified files are analyzed.
+2. **Lint**: ESLint checks for logical errors and Playwright anti-patterns.
+3. **Format**: Prettier automatically fixes styling issues.
+4. **Verify**: If any error is unfixable, the commit is blocked, preventing "broken" code from reaching the remote repository.
+
+**Implementation Logic**:
+The .husky/pre-commit script executes npx lint-staged, ensuring that quality gates are passed before code is even pushed to a Pull Request.
+
+## 🏛️ Coding Standards & Best Practices
+
+This framework follows enterprise-grade engineering principles to ensure the automation suite is maintainable, scalable, and robust.
+
+### 📜 JavaScript & Type Safety
+
+While using JavaScript, we enforce type-safety and clarity through JSDoc and strict ESLint rules.
+
+| Rule              | Description                                                                     | Example                            |
+| ----------------- | ------------------------------------------------------------------------------- | ---------------------------------- |
+| JSDoc Annotations | Document all methods, parameters, and return types for better IDE Intellisense. | /\*_ @param {string} amount _/     |
+| Avoid any Logic   | Ensure data structures are known. Use Zod for API response validation.          | UserResponseSchema.safeParse(body) |
+| ES6+ Features     | Leverage Optional Chaining and Nullish Coalescing for cleaner code.             | userData.address?.street ?? 'N/A'  |
+| Strict Linting    | No await inside loops (where possible) and mandatory handled promises.          | eslint.config.mjs                  |
+
+### 🏷️ Naming Conventions
+
+Standardized naming ensures the project structure is predictable.
+
+| Type                   | Convention         | Example                       |
+| ---------------------- | ------------------ | ----------------------------- |
+| Variables / Properties | camelCase          | checkingAccountId             |
+| Functions / Methods    | camelCase          | navigateViaLeftMenu()         |
+| Classes                | PascalCase         | TransferFundsPage             |
+| Files (Classes/POMs)   | PascalCase.js      | RegisterPage.js               |
+| Files (Specs/Tests)    | kebab-case.spec.js | user-journey.spec.js          |
+| Test Tags              | @lowercase         | @smoke, @regression, @nightly |
+
+### 🏗️ Page Object Model (POM) Guidelines
+
+1. **Locators as Getters**: All locators must be defined as get accessors. This ensures they are evaluated lazily at the moment of interaction.
+2. **Semantic Locators**: Prioritize getByRole, getByLabel, and getByPlaceholder to ensure tests are accessibility-aware. Use CSS/ID selectors (#customer\\.firstName) only as a last resort.
+3. **Encapsulated Actions**: Methods should represent logical user flows (e.g., login(user, pass)) rather than individual clicks.
+4. **Private Helpers**: Use the \_ prefix for internal utility methods (e.g., \_getTrimmedText()) to keep the public API clean.
+5. **Wait for Stability**: Utilize internal helpers like \_clickWithRetry() or toPass() inside POMs for elements known to be flaky due to asynchronous re-rendering.
+
+### 🧪 Test Authoring Standards
+
+1. Descriptive Step Documentation: Every test must use test.step() with a GIVEN / WHEN / THEN structure.
+2. Atomic Independence: Each test should ideally be able to run in isolation. Use Fixtures (e.g., userCreationFixture) to set up state instead of relying on the outcome of a previous test.
+3. Serial Execution: Use test.describe.serial only when a strict sequence of stateful changes is required (e.g., a specific User Journey where funds move across multiple steps).
+4. Web-First Assertions: Never use manual timeouts. Always use auto-retrying assertions:
+    - ✅ await expect(locator).toBeVisible()
+    - ❌ await page.waitForTimeout(5000); expect(await locator.isVisible()).toBe(true)
+5. Tagging Strategy:
+    - @smoke: Critical path validation (Login, Transfer).
+    - @regression: Full feature coverage.
+    - @journey: End-to-end multi-step flows.
+    - @api: Specialized ledger and contract validation.
+
+### 🛠️ Quality Gatekeeping
+
+- **Pre-commit Hooks**: Husky ensures that no code with linting errors or formatting violations reaches the repository.
+- **Fail-Fast Logic**: We prioritize immediate failures over long timeouts. If a configuration or a required fixture setup fails, the test stops immediately to save CI resources.
+- **Dry-Run Analysis**: Use test:ui or test:debug to visually verify locators before committing new Page Objects.
+
+## 🧪 Test Guidelines
+
+The framework emphasizes readability, stability, and high-quality reporting. Follow these rules when authoring new test specs.
+
+1. **Descriptive Naming**
+
+    Test names should clearly describe the expected behavior and include the Test Case (TC) ID for easy tracking.
+    - Good: test('TC-01a: should register a new user successfully', ...)
+    - Bad: test('registration works', ...)
+
+2. **Categorization with Test Tags**
+
+    Use Playwright tags to allow for selective execution via the grep command.
+    - @smoke: Critical business paths (Login, basic navigation).
+    - @regression: Full feature validation.
+    - @journey: Complex, multi-page End-to-End flows.
+    - @nightly: Heavy-duty tests scheduled for the nightly suite.
+    - @api: Tests focused on REST endpoints and ledger validation.
+
+3. **Readability with Test Steps**
+
+    Wrap logic inside test.step() to provide a clear "Given/When/Then" structure. This directly translates into readable logs in the Allure and HTML reports.
+
+4. **Test Independence vs. Serial Execution**
+    - Independence (Default): Tests should be atomic and independent. Use Fixtures (like userCreationFixture) to set up the necessary state instead of relying on a previous test.
+    - Serial (test.describe.serial): Use this sparingly, only when the suite represents a linear "journey" where each step modifies a persistent database state that the next step requires.
+
+5. **Web-First Assertions**
+
+    Always use auto-retrying assertions. Avoid checking states manually with if statements.
+    - **Do**: await expect(locator).toBeVisible(); or await expect(locator).toHaveText('Welcome');
+    - **Don't**: const isVisible = await locator.isVisible(); expect(isVisible).toBe(true);
+
+6. **Stability (No Hardcoded Timeouts)**
+    - **Auto-waiting**: Rely on Playwright's built-in wait logic for actions like click() and fill().
+    - **Retry Logic**: For legacy systems like Parabank that experience database lag, use toPass() for transient UI re-rendering issues instead of page.waitForTimeout().
+
+---

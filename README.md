@@ -536,12 +536,15 @@ export class LoginPage {
 
 1. **Locators as Getters**: Use get accessors for all locators to ensure they are evaluated lazily at the moment of interaction.
 2. **Semantic Locators**: Prioritize semantic locators in this order:
-    - page.getByRole() (Accessibility-based)
-    - page.getByText()
-    - page.getByLabel()
-    - page.locator() (CSS/XPath - use as a last resort)
-3. **Action Methods**: Methods should represent complete user flows (e.g., login) to keep test scripts declarative rather than imperative.
-4. **Wait Logic**: Encapsulate specific wait logic (like waitFor({ state: 'visible' })) inside the POM action methods to make tests more stable.
+    1. `page.getByRole()` - Accessibility-based (Highest priority)
+    2. `page.getByText()` - Navigation or static content
+    3. `page.getByLabel()` - Form fields with associated labels
+    4. `page.getByPlaceholder()` - Inputs with hint text
+    5. `page.getByTestId()` - Stable automation-only attributes (Fallback)
+    6. `page.locator()` - (CSS/XPath - use as a last resort)
+3. **Encapsulated Actions**: Methods should represent logical user flows (e.g., `login(user, pass)`) rather than individual clicks.
+4. **Private Helpers**: Use the `_` prefix for internal utility methods (e.g., `_getTrimmedText()`) to keep the public API clean.
+5. **Wait for Stability**: Utilize internal helpers like `_clickWithRetry()` or `toPass()` inside POMs for elements known to be flaky due to asynchronous re-rendering.
 
 ### Registering Page Objects
 
@@ -779,17 +782,6 @@ Standardized naming ensures the project structure is predictable.
 | **Files (Classes/POMs)**   | `PascalCase.js`      | `RegisterPage.js`                   |
 | **Files (Specs/Tests)**    | `kebab-case.spec.js` | `user-journey.spec.js`              |
 | **Test Tags**              | `@lowercase`         | `@smoke`, `@regression`, `@nightly` |
-
-### 🏗️ Page Object Model (POM) Guidelines
-
-1.  **Locators as Getters**: All locators must be defined as `get` accessors. This ensures they are evaluated lazily at the moment of interaction.
-    ```javascript
-    get loginButton() { return this.page.locator('input[value="Log In"]'); }
-    ```
-2.  **Semantic Locators**: Prioritize `getByRole`, `getByLabel`, and `getByPlaceholder` to ensure tests are accessibility-aware. Use CSS/ID selectors (`#customer\\.firstName`) only as a last resort.
-3.  **Encapsulated Actions**: Methods should represent logical user flows (e.g., `login(user, pass)`) rather than individual clicks.
-4.  **Private Helpers**: Use the `_` prefix for internal utility methods (e.g., `_getTrimmedText()`) to keep the public API clean.
-5.  **Wait for Stability**: Utilize internal helpers like `_clickWithRetry()` or `toPass()` inside POMs for elements known to be flaky due to asynchronous re-rendering.
 
 ### 🧪 Test Authoring Standards
 

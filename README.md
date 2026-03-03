@@ -8,36 +8,35 @@ A robust, enterprise-grade test automation framework built with **Playwright (Ja
 
 - [✨ Features](#-features)
 - [🛠 Tech Stack](#-tech-stack)
+- [🎯 Business Requirements](#-business-requirements)
 - [✅ Prerequisites](#-prerequisites)
 - [🔧 Installation](#-installation)
-- [📂 Project Structure](#-project-structure)
+- [📂 Project Structure](#project-structure)
 - [🔧 Configuration](#-configuration)
 - [🌍 Multi-Environment Management](#-multi-environment-management)
 - [🚀 Running Tests](#-running-tests)
-- [📝 Writing Tests](#-writing-tests)
-- [🏛️ Page Object Model](#-page-object-model)
+- [📝 Writing Tests](#writing-tests)
+- [🏛️ Page Object Model](#page-object-model)
 - [📡 API Testing](#-api-testing)
 - [🔐 Session & Authentication Management](#-session--authentication-management)
-- [🛠️ Coding Standards & Best Practices](#-coding-standards--best-practices)
+- [💎 Code Quality & Standards](#-code-quality--standards)
+- [🛠️ Coding Standards & Best Practices](#coding-standards--best-practices)
 - [🧪 Test Guidelines](#-test-guidelines)
 
 ---
 
 ## ✨ Features
 
-- **Hybrid Testing Architecture** – Seamlessly integrates UI (End-to-End) and REST API testing within a single unified framework.
-- **Advanced Page Object Model (POM)** – Implements a clean separation of concerns, decoupling locators from business logic for high maintainability.
-- **Fixture-Based Dependency Injection** – Utilizes a unified fixture hub for lazy-loaded Page Objects and API clients, reducing test boilerplate.
-- **API Contract Validation** – Employs **Zod** to enforce strict schema validation at the network boundary, catching backend regressions instantly.
-- **Dynamic Data Generation** – Integrated with **Faker** to produce realistic, unique test identities with timestamped uniqueness guarantees.
-- **Interactive Allure Reporting** – Generates rich, visual reports featuring execution trends, categorical breakdowns, and historical data.
-- **Multi-Environment Management** – Supports switching between Dev, Staging, and Production tiers via dynamic `.env` loading and strict fail-fast configuration.
-- **Stateful Session Management** – Advanced cookie extraction and injection utilities to maintain authenticated sessions across legacy and REST endpoints.
-- **Production-Ready CI/CD** – Includes optimized GitHub Actions workflows for **Nightly Regressions** and **Smoke Testing** with automated GitHub Pages deployment.
-- **Enterprise Code Quality** – Enforces industry standards via **ESLint**, **Prettier**, and **Husky** pre-commit hooks to ensure a "Green" repository.
-- **Performance Optimized** – Configured for fully parallel execution with smart worker management to prevent resource exhaustion in CI environments.
-- **Robust Stability Logic** – Mitigates flakiness in legacy systems using web-first assertions and specialized `toPass()` retry mechanisms.
-- **Flexible Tagging System** – Enables targeted execution using `@smoke`, `@regression`, `@journey`, and `@api` tags via the Playwright Grep engine.
+- **🎭 Hybrid Testing Architecture** – Seamlessly integrates UI (End-to-End) and REST API testing within a single unified framework.
+- **🏛️ Advanced Page Object Model (POM)** – Implements a clean separation of concerns, decoupling locators from business logic.
+- **🔌 Fixture-Based Dependency Injection** – Utilizes a unified fixture hub for lazy-loaded Page Objects and API clients.
+- **🛡️ API Contract Validation** – Employs **Zod** to enforce strict schema validation at the network boundary.
+- **🎲 Dynamic Data Generation** – Integrated with **Faker** to produce realistic, unique test identities.
+- **📊 Interactive Allure Reporting** – Generates rich reports featuring execution trends and historical data.
+- **🌐 Multi-Environment Management** – Supports switching between Dev, Staging, and Production tiers via `.env` loading.
+- **🚀 Production-Ready CI/CD** – Optimized GitHub Actions workflows for Nightly and Smoke testing.
+- **💎 Enterprise Code Quality** – Enforces standards via **ESLint**, **Prettier**, and **Husky** pre-commit hooks.
+- **🧪 Robust Stability Logic** – Mitigates flakiness using web-first assertions and specialized `toPass()` retry mechanisms.
 
 ---
 
@@ -54,6 +53,38 @@ A robust, enterprise-grade test automation framework built with **Playwright (Ja
 | **[Husky & lint-staged](https://typicode.github.io/husky/)**                     | Git Hooks              | Automates code quality gates by running linters and formatters before every commit.      |
 | **[ESLint & Prettier](https://eslint.org/)**                                     | Code Quality           | Standardizes code style and prevents anti-patterns (e.g., hardcoded timeouts).           |
 | **[Dotenv](https://github.com/motdotla/dotenv)**                                 | Environment Management | Manages secrets and tier-specific configurations (Dev/Staging/Prod) securely.            |
+
+---
+
+## 🎯 Business Requirements
+
+The following scenarios are fully automated and verified within this suite, mapped across UI and API layers.
+
+### 🖥️ UI Test Scenarios
+
+| ID        | Requirement                  | Implementation Strategy                                                                                   | File Location            |
+| :-------- | :--------------------------- | :-------------------------------------------------------------------------------------------------------- | :----------------------- |
+| **TC-01** | **User Registration**        | Uses `faker-js` to generate unique identities. Username is appended with a timestamp for 100% uniqueness. | `register.spec.js`       |
+| **TC-02** | **Secure Login**             | Validates the credentials created in TC-01 across both UI and API layers.                                 | `login.spec.js`          |
+| **TC-03** | **Global Navigation**        | Iterates through the sidebar menu to verify routing and header rendering for all core modules.            | `login.spec.js`          |
+| **TC-04** | **Savings Account Creation** | Orchestrates account opening and utilizes **Regex** to capture and validate the new numeric Account ID.   | `open-account.spec.js`   |
+| **TC-05** | **Balance Validation**       | Extracts table data from the Accounts Overview and verifies currency formatting and initial balances.     | `transfer-funds.spec.js` |
+| **TC-06** | **Fund Transfer**            | Executes a transfer between Savings and Checking accounts with real-time balance delta verification.      | `transfer-funds.spec.js` |
+| **TC-07** | **Bill Payment**             | Completes a third-party payment flow using the newly created Savings account as the funding source.       | `bill-pay.spec.js`       |
+| **TC-08** | **E2E Journey**              | A single "Golden Path" test merging all the above steps into a continuous user journey.                   | `user-journey.spec.js`   |
+
+---
+
+### 📡 API Test Scenarios
+
+The API suite focuses on ledger integrity and contract validation using specialized REST utilities.
+
+| ID         | Requirement              | Implementation Strategy                                                                                            | File Location              |
+| :--------- | :----------------------- | :----------------------------------------------------------------------------------------------------------------- | :------------------------- |
+| **API-01** | **API Authentication**   | Authenticates via the legacy login form to capture the stateful `JSESSIONID`.                                      | `user-journey-api.spec.js` |
+| **API-02** | **Fund Transfer (REST)** | Executes a `POST` request to the transfer service and validates the success message.                               | `user-journey-api.spec.js` |
+| **API-03** | **Transaction Search**   | Queries the ledger by specific amount to locate the transaction created in Step 2.                                 | `user-journey-api.spec.js` |
+| **API-04** | **JSON Validation**      | Uses **Zod** to perform contract testing on the transaction response, ensuring data types match the bank's schema. | `user-journey-api.spec.js` |
 
 ---
 
@@ -124,10 +155,7 @@ npx husky install
 
 ## Project Structure
 
-````
-## 📂 Project Structure
-
-```text
+```bash
 root/
 ├── .github/
 │   └── workflows/
@@ -185,7 +213,7 @@ root/
 ├── package.json                          # Project scripts and dependencies
 ├── playwright.config.js                  # Core Playwright runner configuration
 └── README.md                             # Framework documentation
-````
+```
 
 ---
 
@@ -652,6 +680,16 @@ const response = await apiRequest({
     },
 });
 ```
+
+---
+
+## 💎 Code Quality & Standards
+
+| Tool         | Benefit                                                         |
+| :----------- | :-------------------------------------------------------------- |
+| **ESLint**   | Enforces Playwright best practices (e.g., no `waitForTimeout`). |
+| **Prettier** | Maintains a 4-space tab width and single-quote consistency.     |
+| **Husky**    | Prevents commits if linting or formatting fails.                |
 
 ---
 

@@ -1,10 +1,44 @@
-
-# Playwright
+# ==============================================================================
+# DEPENDENCIES & RUNTIME CACHE
+# WHY: We exclude 'node_modules' to keep the repository lightweight. 
+# Dependencies must be installed fresh via 'npm install' to ensure platform compatibility.
+# ==============================================================================
 node_modules/
-/allure-results/
-/allure-report/
+/playwright/.cache/
+
+
+# ==============================================================================
+# TEST EXECUTION ARTIFACTS (PLAYWRIGHT)
+# WHY: Screenshots, videos, and trace files are generated dynamically during 
+# test runs. Committing them would bloat the git history with binary data.
+# ==============================================================================
 /test-results/
 /playwright-report/
 /blob-report/
-/playwright/.cache/
-.env.dev
+
+
+# ==============================================================================
+# REPORTING (ALLURE)
+# WHY: Allure results and reports are transient. They are generated from 
+# raw XML/JSON data and should be viewed via CI/CD or local web server.
+# ==============================================================================
+/allure-results/
+/allure-report/
+
+
+# ==============================================================================
+# ENVIRONMENT & SECRETS
+# WHY: CRITICAL SECURITY STEP. We must never commit .env files to the repository. 
+# They contain sensitive credentials (URLs, passwords). Use Repository 
+# Variables/Secrets in CI (GitHub Actions) instead.
+# ==============================================================================
+.env*
+!.env.example
+
+
+# ==============================================================================
+# MISC / OS
+# WHY: Prevent IDE-specific or OS-specific metadata from cluttering the repo.
+# ==============================================================================
+.DS_Store
+.vscode/

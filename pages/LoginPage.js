@@ -23,16 +23,11 @@ export class LoginPage {
     }
 
     get loginButton() {
-        return this.page.locator('input[value="Log In"]');
+        return this.page.getByRole('button', { name: 'Log In', exact: true });
     }
 
     get registerLink() {
-        /**
-         * WHY: Using getByRole is preferred as it mimics how a user
-         * interacts with the page (accessibility-first) and is less
-         * brittle than complex CSS selectors.
-         */
-        return this.page.getByRole('link', { name: 'Register' });
+        return this.page.getByRole('link', { name: 'Register', exact: true });
     }
 
     get errorMessage() {

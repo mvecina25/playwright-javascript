@@ -16,7 +16,7 @@ export class AccountActivityPage {
     // ==================== Locators ====================
 
     get accountDetailsTitle() {
-        return this.page.getByRole('heading', { name: 'Account Details' });
+        return this.page.getByRole('heading', { name: 'Account Details', exact: true });
     }
 
     get accountId() {

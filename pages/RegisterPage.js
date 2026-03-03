@@ -1,3 +1,5 @@
+import { expect } from '@playwright/test';
+
 /**
  * Page Object Model for the User Registration page.
  * This class encapsulates the complex registration form and post-registration messages.
@@ -116,12 +118,26 @@ export class RegisterPage {
 
     /**
      * A high-level workflow to register a user in a single call.
-     * WHY: This abstraction allows tests to focus on the intent (onboarding a user)
-     * rather than the specific form fields, following the Single Responsibility Principle.
+     *
+     * WHY: We implement toPass here to handle ParaBank's eventual consistency.
+     * If the backend takes too long to commit the record, the UI may redirect
+     * incorrectly or show an error. Retrying the submission ensures a
+     * resilient onboarding process.
      */
     async registerNewUser(userData) {
-        await this.fillRegistrationForm(userData);
-        await this.submitRegistration();
+        await expect(async () => {
+            await this.fillRegistrationForm(userData);
+            await this.submitRegistration();
+
+            /**
+             * WHY: We verify visibility of the welcome message as a signal
+             * that the registration transaction was successfully processed.
+             */
+            await expect(this.welcomeMessage).toBeVisible({ timeout: 1000 });
+        }).toPass({
+            intervals: [1000, 2000],
+            timeout: 10000,
+        });
     }
 
     /**

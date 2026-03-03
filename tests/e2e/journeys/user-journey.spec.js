@@ -63,14 +63,7 @@ test.describe('Complete User Banking Journey - End to End Flow', () => {
                  * WHY: Parabank occasionally experiences database lag (eventual consistency).
                  * toPass() retries the form submission if the welcome message isn't rendered immediately.
                  */
-                await expect(async () => {
-                    await registerPage.fillRegistrationForm(userProfile);
-                    await registerPage.submitRegistration();
-                    await expect(registerPage.welcomeMessage).toBeVisible({ timeout: 1000 });
-                }).toPass({
-                    intervals: [1000, 2000],
-                    timeout: 10000,
-                });
+                await registerPage.registerNewUser(userProfile);
 
                 await expect(registerPage.welcomeMessage).toHaveText(
                     `Welcome ${userProfile.username}`,

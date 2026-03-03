@@ -1,3 +1,5 @@
+import { expect } from '@playwright/test';
+
 /**
  * Page Object Model for the Bill Payment module.
  * This class encapsulates the complex form logic required to issue payments
@@ -121,12 +123,31 @@ export class BillPayPage {
 
     /**
      * A high-level workflow method to pay a bill in a single call.
-     * WHY: This follows the Single Responsibility Principle for high-level
-     * interactions, making test scripts more declarative and less imperative.
+     *
+     * WHY: We use toPass() here because Parabank's Bill Pay module is Angular-based.
+     * Transient UI re-rendering or backend session lag can cause the initial
+     * submission to fail or get intercepted. Encapsulating the retry logic within
+     * this workflow method makes our tests more resilient without bloating the test files.
+     *
+     * @param {Object} paymentData
      */
     async payBill(paymentData) {
-        await this.fillBillPaymentForm(paymentData);
-        await this.submitPayment();
+        await expect(async () => {
+            await this.fillBillPaymentForm(paymentData);
+            await this.submitPayment();
+
+            /**
+             * WHY: We check for a specific success signal to determine if
+             * the transaction was processed. If this heading isn't visible
+             * within the interval, the entire block retries.
+             */
+            await expect(
+                this.page.getByRole('heading', { name: 'Bill Payment Complete' }),
+            ).toBeVisible({ timeout: 1000 });
+        }).toPass({
+            intervals: [1000, 2000],
+            timeout: 10000,
+        });
     }
 
     async getPaymentSuccessTitleText() {

@@ -58,22 +58,11 @@ test.describe('Bills Payment - End to End Flow', () => {
 
             await test.step('AND the user provides payee details and submits the payment', async () => {
                 /**
-                 * WHY: Parabank's Bill Pay is an Angular-based module. We use toPass()
-                 * to handle potential session lag or transient UI re-rendering during
-                 * the submission POST request.
+                 * WHY: We simply call the high-level workflow method.
+                 * All the 'toPass' retry logic, form filling, and waiting
+                 * for the success heading is handled automatically by the POM.
                  */
-                await expect(async () => {
-                    await billPayPage.fillBillPaymentForm(paymentPayload);
-                    await billPayPage.submitPayment();
-
-                    // WHY: Visibility check acts as a signal that the transaction was processed
-                    await expect(
-                        billPayPage.page.getByRole('heading', { name: 'Bill Payment Complete' }),
-                    ).toBeVisible({ timeout: 1000 });
-                }).toPass({
-                    intervals: [1000, 2000],
-                    timeout: 10000,
-                });
+                await billPayPage.payBill(paymentPayload);
             });
 
             await test.step('THEN the system should display the successful transaction confirmation', async () => {

@@ -163,7 +163,6 @@ root/
 │       └── smoke-tests.yml               # PR/push validation pipeline
 ├── .husky/                               # Git hooks for code quality
 │   └── pre-commit                        # Triggers lint-staged before commit
-├── .vscode/                              # Workspace and IDE settings
 ├── allure-report/                        # Generated interactive Allure HTML report
 ├── allure-results/                       # Raw JSON Allure test results
 ├── env/                                  # Multi-environment configurations
